@@ -1,0 +1,64 @@
+CREATE DATABASE clubdb;
+
+CREATE USER 'clubuser'@'localhost' IDENTIFIED BY 'clubpass';
+GRANT ALL PRIVILEGES ON clubdb.* TO 'clubuser'@'localhost';
+FLUSH PRIVILEGES;
+
+SHOW DATABASES;
+SELECT user, host FROM mysql.user;
+
+USE clubdb;
+SHOW TABLES;
+
+SELECT * FROM USER;
+CREATE TABLE club (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    club_name VARCHAR(255),
+    description VARCHAR(255),
+    faculty_id VARCHAR(255),
+    club_type VARCHAR(255),
+    head_srn VARCHAR(255),
+    name VARCHAR(255),
+    sem INT,
+    dept VARCHAR(255),
+    phoneno VARCHAR(255),
+    gender VARCHAR(255)
+);
+
+DROP TABLE USER;
+CREATE TABLE user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) UNIQUE,
+    password VARCHAR(255),
+    role VARCHAR(255)
+);
+
+CREATE TABLE member (
+    srn VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255),
+    email VARCHAR(255),
+    domain VARCHAR(255),
+    sem INT,
+    dept VARCHAR(255),
+    phoneno VARCHAR(255),
+    gender VARCHAR(255),
+    password VARCHAR(255)
+);
+
+CREATE TABLE event (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    clubName VARCHAR(255),
+    eventName VARCHAR(255),
+    description VARCHAR(255),
+    location VARCHAR(255),
+    type VARCHAR(255),
+    timestamp DATETIME,
+    budget DOUBLE,
+    registrationLink VARCHAR(255),
+    banner BLOB
+);
+
+SHOW tables;
+
+select * from user;
+select * from member;
