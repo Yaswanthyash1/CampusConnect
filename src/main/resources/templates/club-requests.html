@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pending Club Requests</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Spartan&display=swap">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'League Spartan', sans-serif;
+            background-image: url('/background.png'); /* Replace with your image path */
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+            padding: 20px; /* Reduced padding */
+            border-radius: 10px;
+            width: 80%; /* Adjusted width */
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); /* Subtle shadow */
+            max-height: 80vh; /* Limit maximum height */
+            overflow-y: auto; /* Allow scrolling if content exceeds height */
+        }
+
+        h1 {
+            color: #51c4ee; /* Consistent blue color for headings */
+            text-align: center; /* Center the heading */
+            margin-bottom: 15px; /* Reduced spacing */
+        }
+
+        ul {
+            list-style-type: none; /* Remove bullet points */
+            padding: 0; /* Remove default padding */
+        }
+
+        li {
+            margin-bottom: 20px; /* Adjusted margin */
+            padding: 20px; /* Padding for each request */
+            border: 1px solid #ccc; /* Border around each request */
+            border-radius: 5px; /* Rounded corners */
+        }
+
+        label {
+            font-weight: bold; /* Make labels bold */
+        }
+
+        p {
+            margin: 5px 0; /* Adjusted margin for paragraphs */
+        }
+
+        form {
+            display: flex;
+            justify-content: space-between; /* Distribute buttons evenly */
+        }
+
+        button {
+            background-color: #51c4ee; /* Blue button */
+            color: white;
+            border: none;
+            padding: 10px 20px; /* Padding for button */
+            border-radius: 5px;
+            cursor: pointer; /* Pointer cursor on hover */
+        }
+
+        button:hover {
+            background-color: #4682b4; /* Darker blue on hover */
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Pending Club Requests</h1>
+    <ul>
+        <li th:each="request : ${pendingRequests}">
+            <p><label>Name:</label> <span th:text="${request.memberName}"></span></p>
+            <p><label>SRN:</label> <span th:text="${request.srn}"></span></p>
+            <p><label>Message:</label> <span th:text="${request.message}"></span></p>
+            <p><label>Club Name:</label> <span th:text="${request.clubName}"></span></p>
+            <form th:action="@{'/club/' + ${clubName} + '/requests'}" method="post">
+                <input type="hidden" name="action" value="accept">
+                <input type="hidden" name="srn" th:value="${request.srn}">
+                <button type="submit">Accept</button>
+            </form>
+            <form th:action="@{'/club/' + ${clubName} + '/requests'}" method="post">
+                <input type="hidden" name="action" value="reject">
+                <input type="hidden" name="srn" th:value="${request.srn}">
+                <button type="submit">Reject</button>
+            </form>
+        </li>
+    </ul>
+</div>
+</body>
+</html>

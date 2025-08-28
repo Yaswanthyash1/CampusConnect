@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Register</title>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'League Spartan', sans-serif;
+            background-image: url('/background.png'); /* Replace 'background_image.jpg' with your image path */
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth {
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            width: 50%; /* Covering almost 50% of the middle of the screen */
+            max-width: 400px; /* Increase the width */
+        }
+
+        .auth h1 {
+            margin-bottom: 20px;
+            color: #51c4ee; /* Blue color */
+            font-weight: bold;
+        }
+
+        #registerForm {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #51c4ee;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #b3e7f8;
+        }
+
+        #additionalFields {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="auth">
+    <h1>Register</h1>
+    <form id="registerForm">
+        <select name="userType" required>
+            <option value="">Select User Type</option>
+            <option value="club">Club</option>
+            <option value="member">Member</option>
+            <option value="faculty">Faculty</option>
+        </select>
+        <div id="additionalFields"></div>
+        <button type="submit">Register</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const inputs = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await fetch('/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(inputs),
+            });
+            if (res.ok) {
+                window.location.href = '/login';
+                return;
+            }
+            const text = await res.text();
+            alert(text || "Registration failed");
+        } catch (err) {
+            console.error(err);
+            alert("Couldn't Register. Please Try Again");
+        }
+    });
+
+    function renderAdditionalFields() {
+        const userType = document.querySelector('select[name="userType"]').value;
+        const additionalFieldsDiv = document.getElementById('additionalFields');
+        additionalFieldsDiv.innerHTML = '';
+        if (userType === 'club') {
+            additionalFieldsDiv.innerHTML = `
+                <input type="text" placeholder="Club Name" name="clubName" required>
+                <input type="email" placeholder="Email" name="email" required>
+                <input type="password" placeholder="Password" name="password" required>
+                <input type="text" placeholder="Description" name="description" required>
+                <input type="text" placeholder="Faculty ID" name="facultyId" required>
+                <select name="clubType" required>
+                    <option value="">Select Club Type</option>
+                    <option value="Dance">Dance</option>
+                    <option value="Technical">Technical</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Music">Music</option>
+                </select>
+                <input type="text" placeholder="Head SRN" name="headSrn" required>
+                <input type="text" placeholder="Full Name" name="name" required>
+                <input type="number" placeholder="Semester" name="sem" required>
+                <input type="text" placeholder="Department" name="dept" required>
+                <input type="text" placeholder="Phone Number" name="phoneno" required>
+                <select name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            `;
+        } else if (userType === 'member') {
+            additionalFieldsDiv.innerHTML = `
+                <input type="text" placeholder="SRN" name="srn" required>
+                <input type="email" placeholder="Email" name="email" required>
+                <input type="password" placeholder="Password" name="password" required>
+                <select name="domain" required>
+                    <option value="">Select Domain</option>
+                    <option value="Design">Design</option>
+                    <option value="Logistics">Logistics</option>
+                    <option value="Tech">Tech</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Content Creation">Content Creation</option>
+                    <option value="Social Media">Social Media</option>
+                </select>
+                <input type="text" placeholder="Full Name" name="name" required>
+                <input type="number" placeholder="Semester" name="sem" required>
+                <input type="text" placeholder="Department" name="dept" required>
+                <input type="text" placeholder="Phone Number" name="phoneno" required>
+                <select name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+                <input type="text" placeholder="Club Name" name="clubName">
+            `;
+        } else if (userType === 'faculty') {
+            additionalFieldsDiv.innerHTML = `
+                <input type="email" placeholder="Email" name="email" required>
+                <input type="password" placeholder="Password" name="password" required>
+                <input type="text" placeholder="Faculty Name" name="facultyName" required>
+            `;
+        }
+    }
+    document.querySelector('select[name="userType"]').addEventListener('change', renderAdditionalFields);
+    renderAdditionalFields();
+</script>
+</body>
+</html>

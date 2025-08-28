@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Spartan&display=swap">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'League Spartan', sans-serif;
+            background-image: url('/background.png'); /* Replace with your image path */
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+            padding: 40px;
+            border-radius: 10px;
+            text-align: left;
+            width: 80%;
+            min-height: 60vh; /* Minimum height */
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); /* Subtle shadow */
+        }
+
+        .club-details {
+            margin-top: 20px; /* Space above clubs section */
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px; /* Logout button at top-right */
+            background-color: #51c4ee; /* Blue background */
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background-color: #b3e7f8; /* Lighter blue on hover */
+        }
+
+        ul {
+            list-style-type: none; /* No bullet points */
+            padding: 0; /* Remove default padding */
+        }
+
+        ul li {
+            margin: 5px 0; /* Spacing between list items */
+        }
+
+        input, textarea {
+            padding: 10px; /* Padding within inputs */
+            border: 1px solid #ccc; /* Light border */
+            border-radius: 5px; /* Rounded corners */
+            width: 100%; /* Full width */
+        }
+
+        button {
+            background-color: #51c4ee; /* Blue button */
+            color: white;
+            border: none;
+            padding: 10px 20px; /* Padding for buttons */
+            border-radius: 5px;
+            cursor: pointer; /* Pointer cursor on hover */
+        }
+
+        button:hover {
+            background-color: #4682b4; /* Darker blue on hover */
+        }
+
+        .upcoming-events {
+            margin-top: 20px; /* Space above events section */
+        }
+
+        a {
+            text-decoration: none;
+            color: #51c4ee; /* Link color */
+            transition: color 0.3s; /* Smooth transition */
+        }
+
+        a:hover {
+            color: #b3e7f8; /* Hover effect for links */
+        }
+
+        h1, h2 {
+            color: #51c4ee; /* Blue color for headings */
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Welcome to Your Member Dashboard</h1>
+    <div class="member-details">
+        <h2>Hello, <span th:text="${member.name}"></span>!</h2>
+    </div>
+    <div class="club-details">
+        <h2>Your Clubs:</h2>
+        <ul>
+            <li th:each="club : ${clubs}" th:text="${club}"></li>
+        </ul>
+        <h2>Add Club:</h2>
+        <form th:action="@{/members/{srn}/applyClub(srn=${member.srn})}" method="post">
+
+            <input type="text" name="clubName" placeholder="Enter club name" required>
+            <textarea name="message" placeholder="Enter your message" required></textarea>
+            <button type="submit">Apply for Club</button>
+        </form>
+    </div>
+    <div class="upcoming-events">
+        <h2>Upcoming Events:</h2>
+        <ul>
+            <li th:each="event : ${upcomingEvents}">
+                <h3 th:text="${event.eventName}"></h3>
+                <p><strong>Description:</strong> <span th:text="${event.description}"></span></p>
+                <p><strong>Location:</strong> <span th:text="${event.location}"></span></p>
+                <p><strong>Type:</strong> <span th:text="${event.type}"></span></p>
+                <p><strong>Timestamp:</strong> <span th:text="${event.timestamp}"></span></p>
+                <p><strong>Budget:</strong> <span th:text="${event.budget}"></span></p>
+                <a th:href="${event.registrationLink}" target="_blank">Registration Link</a>
+            </li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>

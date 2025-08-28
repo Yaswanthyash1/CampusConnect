@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Admin Dashboard</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 0;
+          background-color: #fff;
+          color: #333;
+        }
+
+        .club-member-dashboard {
+          max-width: 800px;
+          margin: 20px auto;
+          padding: 20px;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          background-color: #f0f8ff; /* light blue */
+        }
+
+        .header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 20px;
+        }
+
+        .logout-btn {
+          background-color: #3ec1d3; /* blue */
+          color: #fff;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 5px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+        }
+
+        .logout-btn:hover {
+          background-color: #36a4b5; /* darker blue on hover */
+        }
+
+        .club-list {
+          margin-bottom: 20px;
+        }
+
+        .upcoming-events-member {
+          background-color: #fff;
+          padding: 20px;
+          border-radius: 5px;
+        }
+
+        label {
+          margin-right: 10px;
+        }
+
+        select {
+          padding: 8px;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+        }
+
+        select:focus {
+          outline: none;
+        }
+
+        .club-details p {
+          margin-bottom: 10px;
+        }
+
+        .club-details p:last-child {
+          margin-bottom: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="club-member-dashboard">
+    <div class="header">
+        <h1>Hi, Club Admin!</h1>
+        <button class="logout-btn">Logout</button>
+    </div>
+    <div class="club-list">
+        <h3>Club Details:</h3>
+        <div class="club-details">
+            <p>Type: Example Type</p>
+            <p>Faculty ID: Example Faculty ID</p>
+            <p>Head SRN: Example Head SRN</p>
+        </div>
+
+        <nav style="margin-top: 18px;">
+            <label for="options">Select an option:</label>
+            <select id="options">
+                <option value="">Select an option</option>
+                <option value="members">Members</option>
+                <option value="events">Events</option>
+            </select>
+        </nav>
+
+        <div class="upcoming-events-member">
+            <!-- Render the selected component here -->
+            <!-- For Members component -->
+            <div>
+                <p style="text-align: center; margin-top: 10px;">Member Count: 10</p>
+                <!-- Member list can go here -->
+            </div>
+
+            <!-- For Events component -->
+            <div>
+                <!-- Event list can go here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

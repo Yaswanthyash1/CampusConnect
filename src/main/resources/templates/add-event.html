@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Add Event</title>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'League Spartan', sans-serif;
+            background-image: url('/background.png'); /* Replace with your image path */
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+            padding: 20px; /* Reduced padding */
+            border-radius: 10px;
+            width: 50%; /* Reduced width */
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); /* Subtle shadow */
+            max-height: 80vh; /* Limit maximum height */
+            overflow-y: auto; /* Allow scrolling if content exceeds height */
+        }
+
+        h1 {
+            color: #51c4ee; /* Consistent blue color for headings */
+            text-align: center; /* Center the heading */
+            margin-bottom: 15px; /* Reduced spacing */
+        }
+
+        form {
+            display: flex;
+            flex-direction: column; /* Arrange form fields vertically */
+            gap: 10px; /* Gap between form elements */
+        }
+
+        label {
+            color: #333; /* Dark text color for labels */
+        }
+
+        input, textarea {
+            padding: 10px; /* Padding within inputs */
+            border: 1px solid #ccc; /* Light border */
+            border-radius: 5px; /* Rounded corners */
+            width: 100%; /* Full width */
+            box-sizing: border-box; /* Include padding in width */
+        }
+
+        textarea {
+            resize: vertical; /* Allow vertical resizing */
+            height: 80px; /* Reduced height */
+        }
+
+        button {
+            background-color: #51c4ee; /* Blue button */
+            color: white;
+            border: none;
+            padding: 10px 20px; /* Padding for button */
+            border-radius: 5px;
+            cursor: pointer; /* Pointer cursor on hover */
+            align-self: center; /* Center the button */
+            margin-top: 15px; /* Reduced space above the button */
+        }
+
+        button:hover {
+            background-color: #4682b4; /* Darker blue on hover */
+        }
+    </style>
+</head>
+<body>
+<div class="container"> <!-- Main container with reduced height -->
+    <h1>Add Event</h1> <!-- Page heading -->
+
+    <div style="color: green; text-align: center; margin-bottom: 10px;" th:if="${success}">[[${success}]]</div>
+    <div style="color: red; text-align: center; margin-bottom: 10px;" th:if="${error}">[[${error}]]</div>
+    <form enctype="multipart/form-data" method="post" th:action="@{/addEvent}">
+        <label for="clubname">Club Name:</label>
+        <input id="clubname" name="clubname" required type="text">
+
+        <label for="eventname">Event Name:</label>
+        <input id="eventname" name="eventname" required type="text">
+
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" required></textarea>
+
+        <label for="location">Location:</label>
+        <input id="location" name="location" required type="text">
+
+        <label for="type">Type:</label>
+        <input id="type" name="type" required type="text">
+
+        <label for="timestamp">Timestamp:</label>
+        <input id="timestamp" name="timestamp" required type="datetime-local">
+
+        <label for="budget">Budget:</label>
+        <input id="budget" name="budget" required type="number">
+
+        <label for="registrationlink">Registration Link:</label>
+        <input id="registrationlink" name="registrationlink" required type="text">
+
+        <label for="banner">Banner:</label>
+        <input id="banner" name="banner" type="file">
+
+        <button type="submit">Submit</button>
+    </form>
+
+</div>
+</body>
+</html>

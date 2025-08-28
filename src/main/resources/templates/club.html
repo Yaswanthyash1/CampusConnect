@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Admin</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Spartan&display=swap">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'League Spartan', sans-serif;
+            background-image: url('/background.png'); /* Replace with your image path */
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+        }
+
+        .dashboard {
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+            padding: 40px;
+            border-radius: 10px;
+            text-align: left;
+            width: 80%; /* Larger width */
+            min-height: 60vh; /* Maintain a minimum height */
+            position: relative; /* To position the logout button */
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px; /* Place logout button at the top-right */
+            background-color: #51c4ee;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background-color: #b3e7f8; /* Hover effect */
+        }
+
+        .club-details {
+            margin-top: 20px;
+        }
+
+        .content {
+            display: none; /* Hide initially */
+        }
+
+        .centered {
+            display: flex;
+            justify-content: center; /* Center content horizontally */
+            align-items: center; /* Center content vertically */
+            margin-top: 18px; /* Additional spacing */
+        }
+
+        select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        a {
+            text-decoration: none;
+            color: #51c4ee; /* Link color */
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        a:hover {
+            color: #b3e7f8; /* Hover effect for links */
+        }
+
+        label {
+            margin-right: 10px;
+        }
+
+        h1 {
+            color: #51c4ee;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <button class="logout-btn" onclick="logout()">Logout</button>
+
+    <h1 th:text="'Hi, ' + ${club.clubName} + ' Club Head!'"></h1> <!-- Greeting for the club head -->
+
+    <div class="club-details">
+        <p>Type: <span th:text="${club.clubType}"></span></p>
+        <p>Faculty ID: <span th:text="${club.facultyId}"></span></p>
+        <p>Head SRN: <span th:text="${club.headSrn}"></span></p>
+    </div>
+
+    <a th:href="@{'/club/' + ${club.clubName} + '/requests'}" class="pending-requests-btn">View Pending Requests</a> <!-- Link to view pending requests -->
+
+    <div class="centered"> <!-- Centered content -->
+        <label for="options">Select an option:</label>
+        <select id="options" onchange="showContent()"> <!-- Dropdown to select members or events -->
+            <option value="">Select an option</option>
+            <option value="members">Members</option>
+            <option value="events">Events</option>
+        </select>
+    </div>
+
+    <div class="content" id="members-content"> <!-- Content for members -->
+        <h3 th:text="'Members List:'"></h3>
+        <ul>
+            <li th:each="member : ${clubMembers}" th:text="${member['SRN']}"></li> <!-- Display member SRNs -->
+        </ul>
+    </div>
+
+    <div class="content" id="events-content"> <!-- Content for events -->
+        <h3 th:text="'Upcoming Events:'"></h3> <!-- Title for events section -->
+        <ul> <!-- List to display event details -->
+            <li th:each="event : ${clubEvents}">
+                <strong th:text="${event['eventname']}"></strong> <!-- Event name -->
+                <p>
+                    <span th:text="'Location: ' + ${event['loc']}"></span> <!-- Event location -->
+                    <br>
+                    <span th:text="'Description: ' + ${event['description']}"></span> <!-- Event description -->
+                    <br>
+                    <span th:text="'Type: ' + ${event['type']}"></span> <!-- Event type -->
+                    <br>
+                    <span th:text="'Budget: $' + ${event['budget']}"></span> <!-- Event budget -->
+                    <br>
+                    <span th:text="'Timestamp: ' + ${event['timestamp']}"></span> <!-- Event timestamp -->
+                    <br>
+                    <a th:href="${event['registration_link']}" target="_blank">Register Here</a> <!-- Link to registration -->
+                </p>
+            </li>
+        </ul>
+        <a th:href="@{/event}" class="add-event-btn">Add New Event</a> <!-- Link to add a new event -->
+    </div>
+</div>
+
+<script>
+    function logout() {
+        window.location.href = '/'; // Redirect to home page
+    }
+
+    function showContent() {
+        const select = document.getElementById("options");
+        const membersContent = document.getElementById("members-content");
+        const eventsContent = document.getElementById("events-content");
+
+        // Hide all content initially
+        membersContent.style.display = "none";
+        eventsContent.style.display = "none";
+
+        // Show the selected content
+        if (select.value === "members") {
+            membersContent.style.display = "block";
+        } else if (select.value === "events") {
+            eventsContent.style.display = "block";
+        }
+    }
+</script>
+</body>
+</html>
