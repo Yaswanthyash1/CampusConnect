@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>NITK Events - Member View</title>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="/css/app.css" rel="stylesheet">
+</head>
+<body>
+<!-- Navbar -->
+<div class="navbar">
+    <h1>NITK CLUBS</h1>
+    <div>
+        <a class="nav-btn" href="/home" style="margin-right:12px;">Home</a>
+        <button class="nav-btn" id="logoutBtn">Logout</button>
+    </div>
+</div>
+
+<!-- Page Header -->
+<div class="container header">
+    <h2>Upcoming Events</h2>
+    <p>Discover and register for exciting events happening at NITK</p>
+</div>
+
+<!-- Events -->
+<div class="container">
+    <div class="events-grid" th:if="${events != null and !#lists.isEmpty(events)}">
+        <div class="event-card" th:each="event : ${events}">
+            <div class="event-card-header">
+                <h3 th:text="${event.eventName}">Event Name</h3>
+                <span class="event-type" th:text="${event.type}">Type</span>
+            </div>
+
+            <div class="event-meta">
+                <p><strong>📍</strong> <span th:text="${event.location}">Location</span></p>
+                <p><strong>📅</strong> <span th:text="${#dates.format(event.timestamp,'dd MMM yyyy HH:mm')}">Date</span>
+                </p>
+                <p><strong>🏛</strong> <span th:text="${event.clubName}">Club</span></p>
+                <p><strong>💰</strong> ₹<span th:text="${event.budget}">Budget</span></p>
+            </div>
+
+            <div class="event-actions">
+                <a class="btn" target="_blank" th:href="${event.registrationLink}" th:if="${event.registrationLink}">Register
+                    Now</a>
+                <span class="btn btn-disabled"
+                      th:if="${event.registrationLink == null or event.registrationLink == ''}">Registration Closed</span>
+                <a class="btn btn-secondary" th:href="@{'/event-details/' + ${event.id}}">View Details</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" th:if="${events == null or #lists.isEmpty(events)}">
+        <h3>No Events Found</h3>
+        <p>There are currently no upcoming events. Check back later!</p>
+    </div>
+</div>
+
+<script>
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = '/login';
+    });
+</script>
+</body>
+</html>

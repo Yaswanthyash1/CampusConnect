@@ -1,15 +1,19 @@
 package com.controller;
 
-import com.service.ClubService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import com.model.Member;
 import com.model.Club;
+import com.model.Member;
+import com.service.ClubService;
 import com.service.MemberService;
-import java.util.Map;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
-import java.util.List;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -30,15 +34,15 @@ public class AuthController {
         try {
             if (userType.equals("member")) {
                 Member savedMember = memberService.createMember(
-                    (String) requestBody.get("email"),
-                    (String) requestBody.get("password"),
-                    (String) requestBody.get("domain"),
-                    (String) requestBody.get("srn"),
-                    (String) requestBody.get("name"),
-                    Integer.parseInt((String) requestBody.get("sem")),
-                    (String) requestBody.get("dept"),
-                    (String) requestBody.get("phoneno"),
-                    (String) requestBody.get("gender")
+                        (String) requestBody.get("email"),
+                        (String) requestBody.get("password"),
+                        (String) requestBody.get("domain"),
+                        (String) requestBody.get("srn"),
+                        (String) requestBody.get("name"),
+                        Integer.parseInt((String) requestBody.get("sem")),
+                        (String) requestBody.get("dept"),
+                        (String) requestBody.get("phoneno"),
+                        (String) requestBody.get("gender")
                 );
                 String srn = (String) requestBody.get("srn");
                 // Always insert into user table for authentication
@@ -47,17 +51,17 @@ public class AuthController {
                 return ResponseEntity.ok().body(savedMember);
             } else if (userType.equals("clubHead") || userType.equals("club")) {
                 Club savedClub = clubService.createClub(
-                    (String) requestBody.get("clubName"),
-                    (String) requestBody.get("email"),
-                    (String) requestBody.get("password"),
-                    (String) requestBody.get("facultyId"),
-                    (String) requestBody.get("clubType"),
-                    (String) requestBody.get("headSrn"),
-                    (String) requestBody.get("name"),
-                    Integer.parseInt((String) requestBody.get("sem")),
-                    (String) requestBody.get("dept"),
-                    (String) requestBody.get("phoneno"),
-                    (String) requestBody.get("gender")
+                        (String) requestBody.get("clubName"),
+                        (String) requestBody.get("email"),
+                        (String) requestBody.get("password"),
+                        (String) requestBody.get("facultyId"),
+                        (String) requestBody.get("clubType"),
+                        (String) requestBody.get("headSrn"),
+                        (String) requestBody.get("name"),
+                        Integer.parseInt((String) requestBody.get("sem")),
+                        (String) requestBody.get("dept"),
+                        (String) requestBody.get("phoneno"),
+                        (String) requestBody.get("gender")
                 );
                 String srn = (String) requestBody.get("headSrn");
                 String clubName = (String) requestBody.get("clubName");
@@ -84,35 +88,57 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> loginData) {
-        String userType = loginData.get("userType");
-        String password = loginData.get("password");
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, Object> payload) {
+        String userType = (payload.get("userType") instanceof String) ? (String) payload.get("userType") : null;
+        String password = (payload.get("password") instanceof String) ? (String) payload.get("password") : null;
 
-        if (userType.equals("member")) {
-            String srn = loginData.get("srn");
-            Member member = memberService.findBySrnAndPassword(srn, password);
-            if (member != null) {
-                return ResponseEntity.ok().body(new LoginResponse("/member/" + member.getSrn(), member.getSrn()));
+        Map<String, Object> resp = new HashMap<>();
+
+        if ("member".equals(userType)) {
+            String srn = (payload.get("srn") instanceof String) ? (String) payload.get("srn") : null;
+            if (srn == null || password == null) {
+                resp.put("error", "Missing credentials");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resp);
             }
-        } else if (userType.equals("clubHead")) {
-            String clubName = loginData.get("clubName");
-            Club club = clubService.findByClubNameAndPassword(clubName, password);
-            if (club != null) {
-                return ResponseEntity.ok().body(new LoginResponse("/club/" + club.getClubName(), club.getClubName()));
+            Member member = memberService.findBySrn(srn);
+            if (member == null) {
+                resp.put("error", "Member not found");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
             }
-        } else if (userType.equals("faculty")) {
-            String facultyEmail = loginData.get("email");
-            String sql = "SELECT * FROM faculty WHERE email = ? AND password = ?";
-            List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, facultyEmail, password);
-            if (!result.isEmpty()) {
-                int facultyId = (int) result.get(0).get("id");
-                return ResponseEntity.ok().body(new LoginResponse("/faculty/" + facultyId, String.valueOf(facultyId)));
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            if (!password.equals(member.getPassword())) {
+                resp.put("error", "Invalid password");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
             }
+            resp.put("userIdentifier", member.getSrn());
+            resp.put("role", "member");
+            return ResponseEntity.ok(resp);
         }
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        // For other user types accept and echo back identifier so frontend can proceed
+        if ("clubHead".equals(userType)) {
+            String clubName = (payload.get("clubName") instanceof String) ? (String) payload.get("clubName") : null;
+            if (clubName == null) {
+                resp.put("error", "Missing clubName");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resp);
+            }
+            resp.put("userIdentifier", clubName);
+            resp.put("role", "clubHead");
+            return ResponseEntity.ok(resp);
+        }
+
+        if ("faculty".equals(userType)) {
+            String email = (payload.get("email") instanceof String) ? (String) payload.get("email") : null;
+            if (email == null) {
+                resp.put("error", "Missing email");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resp);
+            }
+            resp.put("userIdentifier", email);
+            resp.put("role", "faculty");
+            return ResponseEntity.ok(resp);
+        }
+
+        resp.put("error", "Unsupported userType");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resp);
     }
 
     public static class LoginResponse {

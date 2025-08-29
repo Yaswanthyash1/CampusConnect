@@ -81,7 +81,7 @@
         }
         .role-card .btn:hover { filter: brightness(1.05); }
 
-        /* Events */
+        /* Clubs Section for Faculty */
         .event-section { max-width: 1100px; margin: 60px auto; padding: 0 20px; }
         .event-section h2 { text-align: center; margin-bottom: 30px; font-size: 30px; }
         .events-grid {
@@ -121,23 +121,6 @@
 <!-- Role Actions -->
 <div id="roleActions"></div>
 
-<!-- Events -->
-<div class="event-section">
-    <h2>Upcoming Events</h2>
-    <div class="events-grid">
-        <div class="event-card" th:each="event : ${events}">
-            <h3 th:text="${event.eventName}"></h3>
-            <p th:text="${event.description}"></p>
-            <p><b>Club:</b> <span th:text="${event.clubName}"></span></p>
-            <p><b>Location:</b> <span th:text="${event.location}"></span></p>
-            <p><b>Type:</b> <span th:text="${event.type}"></span></p>
-            <p><b>Date:</b> <span th:text="${event.timestamp}"></span></p>
-            <p><b>Budget:</b> ₹<span th:text="${event.budget}"></span></p>
-            <a class="btn" target="_blank" th:href="${event.registrationLink}">Register</a>
-        </div>
-    </div>
-</div>
-
 <!-- Clubs Section for Faculty -->
 <div class="event-section" th:if="${clubs}">
     <h2>All Clubs</h2>
@@ -174,7 +157,8 @@
           <div class="role-card">
             <h3>Member Dashboard</h3>
             <a class="btn" href="/member/${userIdentifier}">My Dashboard</a>
-            <a class="btn" href="/event">Upcoming Events</a>
+            <a class="btn" href="/events">Upcoming Events</a>
+            <a class="btn" href="/request">Request</a>
           </div>`;
       } else if (userType === 'clubHead') {
         roleActionsDiv.innerHTML = `
@@ -189,7 +173,7 @@
           <div class="role-card">
             <h3>Faculty Panel</h3>
             <a class="btn" href="/faculty/${userIdentifier}">My Clubs</a>
-            <a class="btn" href="/event">Upcoming Events</a>
+            <a class="btn" href="/events">Upcoming Events</a>
           </div>`;
       }
     } else {

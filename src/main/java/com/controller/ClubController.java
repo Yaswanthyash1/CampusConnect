@@ -1,7 +1,9 @@
 package com.controller;
 
 import com.model.Club;
+import com.model.MemberRequest;
 import com.service.ClubService;
+import com.service.MemberRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
@@ -22,6 +24,8 @@ public class ClubController {
     private ClubService clubService;
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private MemberRequestService memberRequestService;
 
     @GetMapping("/club/{clubName}")
     public String clubDashboard(@PathVariable String clubName, Model model) {
@@ -38,7 +42,10 @@ public class ClubController {
     }
 
     @GetMapping("/event")
-    public String showEventForm() {
+    public String showEventForm(Model model) {
+        String sql = "SELECT * FROM event";
+        List<Map<String, Object>> events = jdbcTemplate.queryForList(sql);
+        model.addAttribute("events", events);
         return "event";
     }
 
@@ -75,7 +82,7 @@ public class ClubController {
             String facultyName = (String) faculty.get("faculty_name");
             String selectClubsSql = "SELECT c.*, COUNT(cm.SRN) AS memberCount, SUM(e.budget) AS totalBudget " +
                     "FROM club c " +
-                    "LEFT JOIN ClubMember cm ON c.clubName = cm.clubName " +
+                    "LEFT JOIN clubmember cm ON c.clubName = cm.clubName " +
                     "LEFT JOIN event e ON c.clubName = e.clubname " +
                     "WHERE c.faculty_id = ? " +
                     "GROUP BY c.id";
@@ -139,24 +146,41 @@ public class ClubController {
 
     @PostMapping("/club/{clubName}/requests")
     public String handleClubRequests(@PathVariable String clubName, @RequestParam String action,
-                                     @RequestParam String srn) {
-        if ("accept".equals(action)) {
-            String acceptRequestQuery = "INSERT INTO ClubMember (SRN, clubName) VALUES (?, ?)";
-            jdbcTemplate.update(acceptRequestQuery, srn, clubName);
-            String updateRequestStatusQuery = "UPDATE requests SET status = 'accepted' WHERE srn = ? AND clubName = ?";
-            jdbcTemplate.update(updateRequestStatusQuery, srn, clubName);
-        } else if ("reject".equals(action)) {
-            String rejectRequestQuery = "UPDATE requests SET status = 'rejected' WHERE srn = ? AND clubName = ?";
-            jdbcTemplate.update(rejectRequestQuery, srn, clubName);
+                                     @RequestParam(required = false) Long requestId,
+                                     @RequestParam(required = false) String srn) {
+        // action = "accept" or "reject"
+        try {
+            if (requestId != null) {
+                // Update the MemberRequest entity status
+                java.util.Optional<com.model.MemberRequest> opt = memberRequestService.getRequestById(requestId);
+                if (opt.isPresent()) {
+                    com.model.MemberRequest req = opt.get();
+                    if ("accept".equals(action)) {
+                        req.setStatus("accepted");
+                        // record which club approved the request (optional)
+                        req.setClubName(clubName);
+                    } else if ("reject".equals(action)) {
+                        req.setStatus("rejected");
+                    }
+                    memberRequestService.saveRequest(req);
+                }
+            }
+        } catch (Exception e) {
+            // log and continue
+            e.printStackTrace();
         }
-        return "redirect:/club/{clubName}";
+        return "redirect:/club/" + clubName + "/requests";
     }
 
     @GetMapping("/club/{clubName}/requests")
     public String viewClubRequests(@PathVariable String clubName, Model model) {
-        String pendingRequestsQuery = "SELECT * FROM requests WHERE clubName = ? AND status='pending'";
-        List<Map<String, Object>> pendingRequests = jdbcTemplate.queryForList(pendingRequestsQuery, clubName);
-        model.addAttribute("pendingRequests", pendingRequests);
+        // Fetch pending MemberRequest entities for this club so Thymeleaf can access properties like memberId via getters
+        List<MemberRequest> pendingRequests = memberRequestService.getRequestsByClubNameAndStatus(clubName, "pending");
+        model.addAttribute("requests", pendingRequests);
+        // For now, mark the view as club head view so approve/reject buttons are shown. Integrate with your auth later.
+        model.addAttribute("isClubHead", true);
+        // Provide clubName so the template can post approve/reject actions to the correct club
+        model.addAttribute("clubName", clubName);
         return "club-requests";
     }
 
