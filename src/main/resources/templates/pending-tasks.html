@@ -343,13 +343,7 @@
                 <div class="request-actions">
                     <button class="complete-btn" th:onclick="'completeIdea(' + ${request.id} + ')'">✔️ Complete</button>
                     <button class="view-details-btn"
-                            onclick="openDetailsModalFromData(this)"
-                            th:data-description="${request.description}"
-                            th:data-id="${request.id}"
-                            th:data-member="${request.memberId}"
-                            th:data-status="${request.status}"
-                            th:data-timestamp="${request.timestamp}"
-                            th:data-type="${request.type}">🔍 View Details
+                            th:onclick="'viewRequestDetails(' + ${request.id} + ')'">🔍 View Details
                     </button>
                 </div>
             </li>
@@ -376,13 +370,7 @@
                     <button class="complete-btn" th:onclick="'completeQuery(' + ${request.id} + ')'">✔️ Complete
                     </button>
                     <button class="view-details-btn"
-                            onclick="openDetailsModalFromData(this)"
-                            th:data-description="${request.description}"
-                            th:data-id="${request.id}"
-                            th:data-member="${request.memberId}"
-                            th:data-status="${request.status}"
-                            th:data-timestamp="${request.timestamp}"
-                            th:data-type="${request.type}">🔍 View Details
+                            th:onclick="'viewRequestDetails(' + ${request.id} + ')'">🔍 View Details
                     </button>
                 </div>
             </li>
@@ -409,13 +397,7 @@
                     <button class="complete-btn" th:onclick="'completeProject(' + ${request.id} + ')'">✔️ Complete
                     </button>
                     <button class="view-details-btn"
-                            onclick="openDetailsModalFromData(this)"
-                            th:data-description="${request.description}"
-                            th:data-id="${request.id}"
-                            th:data-member="${request.memberId}"
-                            th:data-status="${request.status}"
-                            th:data-timestamp="${request.timestamp}"
-                            th:data-type="${request.type}">🔍 View Details
+                            th:onclick="'viewRequestDetails(' + ${request.id} + ')'">🔍 View Details
                     </button>
                 </div>
             </li>
@@ -442,13 +424,7 @@
                     <button class="complete-btn" th:onclick="'completeEvent(' + ${request.id} + ')'">✔️ Complete
                     </button>
                     <button class="view-details-btn"
-                            onclick="openDetailsModalFromData(this)"
-                            th:data-description="${request.description}"
-                            th:data-id="${request.id}"
-                            th:data-member="${request.memberId}"
-                            th:data-status="${request.status}"
-                            th:data-timestamp="${request.timestamp}"
-                            th:data-type="${request.type}">🔍 View Details
+                            th:onclick="'viewRequestDetails(' + ${request.id} + ')'">🔍 View Details
                     </button>
                 </div>
             </li>
@@ -584,6 +560,10 @@
             sessionStorage.setItem('completingRequestType', 'event');
             window.location.href = '/add-event?fromRequest=' + requestId;
         }
+    }
+
+    function viewRequestDetails(requestId) {
+        window.location.href = '/request-details/' + requestId;
     }
 
     function openDetailsModal(type, id, description, timestamp, memberId) {

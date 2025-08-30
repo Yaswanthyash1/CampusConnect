@@ -171,4 +171,16 @@ public class RequestController {
         // Redirect member back to their home page
         return "redirect:/home";
     }
+
+    @GetMapping("/request-details/{id}")
+    public String showRequestDetails(@PathVariable("id") Long id, Model model) {
+        Optional<MemberRequest> requestOpt = memberRequestService.getRequestById(id);
+        if (requestOpt.isEmpty()) {
+            return "redirect:/pending-tasks";
+        }
+
+        MemberRequest request = requestOpt.get();
+        model.addAttribute("request", request);
+        return "request-details";
+    }
 }

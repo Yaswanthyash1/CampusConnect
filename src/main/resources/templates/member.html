@@ -16,28 +16,28 @@
             --glass: rgba(255,255,255,0.08);
             --shadow: 0 10px 25px rgba(0,0,0,0.35);
         }
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            margin: 0;
             font-family: 'League Spartan', sans-serif;
             background: linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));
             color: var(--text);
             min-height: 100vh;
         }
+        /* Navbar */
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 18px 40px;
+            padding: 16px 40px;
             background: rgba(255,255,255,0.05);
             backdrop-filter: blur(12px);
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 100;
         }
-        .navbar h1 { margin: 0; font-size: 24px; }
+        .navbar h1 { font-size: 24px; font-weight: 700; }
         .nav-btn {
-            padding: 8px 14px;
+            padding: 8px 16px;
             border-radius: 8px;
             border: none;
             background: linear-gradient(145deg,var(--accent),var(--accent2));
@@ -46,44 +46,79 @@
             text-decoration: none;
             cursor: pointer;
         }
+        .nav-btn:hover { filter: brightness(1.1); }
+
+        /* Container */
         .container {
             max-width: 1100px;
-            margin: 60px auto;
-            padding: 28px;
+            margin: 50px auto;
+            padding: 30px;
             background: var(--glass);
-            border-radius: 14px;
+            border-radius: 16px;
             box-shadow: var(--shadow);
         }
         h1,h2 { color: var(--accent); margin-bottom: 16px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-        td, th { padding: 10px; }
-        th { color: #a0e7e5; text-align: left; }
-        .member-info { background: rgba(255,255,255,0.04); padding: 20px; border-radius: 10px; margin-bottom: 30px; }
-        .member-requests { margin-top: 30px; }
-        .member-requests table { background: rgba(255,255,255,0.06); border-radius: 8px; }
-        .logout-btn { padding: 8px 12px; border-radius: 8px; background: linear-gradient(145deg,var(--accent),var(--accent2)); border: none; color: #0c1f28; font-weight: 600; cursor: pointer; }
-        ul { padding-left: 20px; margin-bottom: 20px; }
-        li { margin-bottom: 8px; }
-        .status-badge {
+        h1 { font-size: 28px; text-align: center; margin-bottom: 30px; }
+
+        /* Section cards */
+        .card {
+            background: rgba(255,255,255,0.06);
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            margin-bottom: 28px;
+        }
+        .card h2 { font-size: 20px; margin-bottom: 12px; }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+        thead {
+            background: rgba(255,255,255,0.08);
+        }
+        th, td {
+            padding: 12px 14px;
+            text-align: left;
+        }
+        th { color: var(--accent2); font-weight: 600; }
+        tr:nth-child(even) { background: rgba(255,255,255,0.04); }
+
+        /* Lists */
+        ul { list-style: disc; padding-left: 20px; }
+        li { margin-bottom: 6px; }
+
+        /* Badges */
+        .status-badge, .completion-badge {
             padding: 4px 12px;
             border-radius: 15px;
             font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
+            display: inline-block;
         }
         .status-pending { background: #ffc107; color: #000; }
         .status-accepted { background: #17a2b8; color: #fff; }
         .status-rejected { background: #dc3545; color: #fff; }
         .status-completed { background: #28a745; color: #fff; }
-        .completion-badge {
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
         .completion-yes { background: #28a745; color: #fff; }
         .completion-no { background: #6c757d; color: #fff; }
+
+        /* Form */
+        form { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-family: inherit;
+        }
+        select option { color: #000; }
     </style>
 </head>
 <body>
@@ -99,59 +134,59 @@
     <h1>Welcome to Your Member Dashboard</h1>
 
     <!-- Member Information -->
-    <div class="member-info">
+    <div class="card member-info">
         <h2>Hello, <span th:text="${member.name}"></span>!</h2>
         <h2>Member Information</h2>
         <table>
             <tr>
-                <td style="font-weight:600;">SRN:</td>
+                <td><b>SRN:</b></td>
                 <td th:text="${member.srn}"></td>
             </tr>
             <tr>
-                <td style="font-weight:600;">Name:</td>
+                <td><b>Name:</b></td>
                 <td th:text="${member.name}"></td>
             </tr>
             <tr>
-                <td style="font-weight:600;">Email:</td>
+                <td><b>Email:</b></td>
                 <td th:text="${member.email}"></td>
             </tr>
             <tr>
-                <td style="font-weight:600;">Domain:</td>
+                <td><b>Domain:</b></td>
                 <td th:text="${member.domain}"></td>
             </tr>
             <tr>
-                <td style="font-weight:600;">Semester:</td>
+                <td><b>Semester:</b></td>
                 <td th:text="${member.sem}"></td>
             </tr>
             <tr>
-                <td style="font-weight:600;">Department:</td>
+                <td><b>Department:</b></td>
                 <td th:text="${member.dept}"></td>
             </tr>
             <tr>
-                <td style="font-weight:600;">Phone:</td>
+                <td><b>Phone:</b></td>
                 <td th:text="${member.phoneno}"></td>
             </tr>
             <tr>
-                <td style="font-weight:600;">Gender:</td>
+                <td><b>Gender:</b></td>
                 <td th:text="${member.gender}"></td>
             </tr>
             <tr>
-                <td style="font-weight:600;">Password:</td>
+                <td><b>Password:</b></td>
                 <td>******** (hidden)</td>
             </tr>
         </table>
     </div>
 
     <!-- Member Clubs -->
-    <div class="club-details">
-        <h2>Your Clubs:</h2>
+    <div class="card club-details">
+        <h2>Your Clubs</h2>
         <ul>
             <li th:each="club : ${clubs}" th:text="${club}"></li>
         </ul>
     </div>
 
     <!-- My Club Section -->
-    <div class="my-club-section">
+    <div class="card my-club-section">
         <h2>My Club</h2>
         <div th:if="${member.club == null}">
             <form method="post" th:action="@{/member/apply-club}">
@@ -169,7 +204,7 @@
     </div>
 
     <!-- Member Requests -->
-    <div class="member-requests">
+    <div class="card member-requests">
         <h2>My Requests</h2>
         <div th:if="${requests == null or #lists.isEmpty(requests)}">
             <p>You have not submitted any requests yet.</p>
@@ -189,19 +224,15 @@
             <tr th:each="req : ${requests}">
                 <td th:text="${req.type}"></td>
                 <td th:text="${req.description}"></td>
-                <td>
-                    <span class="status-badge" th:class="'status-badge status-' + ${req.status.toLowerCase()}"
-                          th:text="${req.status}"></span>
-                </td>
-                <td>
-                    <span class="completion-badge"
+                <td><span class="status-badge" th:class="'status-badge status-' + ${req.status.toLowerCase()}"
+                          th:text="${req.status}"></span></td>
+                <td><span class="completion-badge"
                           th:class="'completion-badge ' + (${req.isCompleted() != null and req.isCompleted()} ? 'completion-yes' : 'completion-no')"
                           th:text="${req.isCompleted() != null and req.isCompleted()} ? 'Completed' : 'Pending'"></span>
                 </td>
                 <td th:text="${#dates.format(req.timestamp, 'yyyy-MM-dd HH:mm')}"></td>
                 <td>
-                    <a target="_blank"
-                       th:href="@{/request/file/{id}(id=${req.id})}"
+                    <a target="_blank" th:href="@{/request/file/{id}(id=${req.id})}"
                        th:if="${req.filePath} != null and ${req.filePath} != ''" th:text="${req.fileName}"></a>
                     <span th:if="${req.filePath} == null or ${req.filePath} == ''">No file</span>
                 </td>
@@ -210,17 +241,12 @@
         </table>
     </div>
 </div>
+
 <script>
-    // Logout handler for member page
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
-            try {
-                localStorage.clear();
-            } catch (e) {
-                // ignore
-            }
-            // Redirect to server-side logout which will invalidate any session and then send user to login
+            try { localStorage.clear(); } catch (e) {}
             window.location.href = '/logout';
         });
     }
