@@ -159,6 +159,8 @@
             <a class="btn" href="/member/${userIdentifier}">My Dashboard</a>
             <a class="btn" href="/events/upcoming">Upcoming Events</a>
             <a class="btn" href="/events/past">Past Events</a>
+            <a class="btn" href="/projects/upcoming">Upcoming Projects</a>
+            <a class="btn" href="/projects/past">Past Projects</a>
             <a class="btn" href="/request">Request</a>
           </div>`;
       } else if (userType === 'clubHead') {
@@ -169,6 +171,11 @@
             <a class="btn" href="/club/${userIdentifier}/requests">View Requests</a>
             <a class="btn" href="/club/${userIdentifier}/processed-requests">Processed Requests</a>
             <a class="btn" href="/add-event">Create Event</a>
+            <a class="btn" href="/add-project">Add Project</a>
+            <a class="btn" href="/events/upcoming">Upcoming Events</a>
+            <a class="btn" href="/events/past">Past Events</a>
+            <a class="btn" href="/projects/upcoming">Upcoming Projects</a>
+            <a class="btn" href="/projects/past">Past Projects</a>
             <a class="btn" href="/pending-tasks?userIdentifier=${userIdentifier}">Pending Tasks</a>
           </div>`;
       } else if (userType === 'faculty') {
@@ -177,6 +184,7 @@
             <h3>Faculty Panel</h3>
             <a class="btn" href="/faculty/${userIdentifier}">My Clubs</a>
             <a class="btn" href="/events">Upcoming Events</a>
+            <a class="btn" href="/projects">All Projects</a>
           </div>`;
       }
     } else {

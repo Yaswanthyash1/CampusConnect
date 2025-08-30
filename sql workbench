@@ -72,6 +72,37 @@ CREATE TABLE your_table_name (
 ALTER TABLE member ADD COLUMN club VARCHAR(255) DEFAULT NULL;
 
 
+CREATE TABLE project (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    clubname VARCHAR(255) NOT NULL,
+    projectname VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(100),
+    priority VARCHAR(50),
+    startdate DATE,
+    enddate DATE,
+    budget DECIMAL(10,2) DEFAULT 0.00,
+    teamsize INT DEFAULT 1,
+    technologies TEXT,
+    objectives TEXT NOT NULL,
+    deliverables TEXT NOT NULL,
+    mentor VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'Planning',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    attachments TEXT,
+
+    -- Indexes for better performance
+    INDEX idx_clubname (clubname),
+    INDEX idx_status (status),
+    INDEX idx_category (category),
+    INDEX idx_priority (priority),
+    INDEX idx_startdate (startdate),
+    INDEX idx_created_at (created_at)
+);
+
+
+
 SHOW tables;
 
 select * from user;
