@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Manage Members</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        /* Event section styles from event-details.html */
+        .event-hero { display:flex; gap:22px; align-items:flex-start; padding:22px; }
+        .hero-left { flex:1 }
+        .hero-title { font-size:28px; margin:0 0 6px; }
+        .hero-sub { color:var(--muted); margin:0 0 12px; }
+        .hero-desc { margin-top:6px; color:var(--muted); line-height:1.6 }
+        .details-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-top:20px }
+        .detail-card { background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); }
+        .detail-card .label { font-weight:700; color:var(--accent2); margin-bottom:6px; display:block }
+        .detail-card .value { color:var(--muted) }
+        .toggle-btns { margin-bottom:20px; }
+        .toggle-btns button { margin-right:10px; padding:8px 16px; border-radius:8px; border:none; background:linear-gradient(145deg,#3ec1d3,#a0e7e5); color:#0c1f28; font-weight:600; cursor:pointer; }
+    </style>
+</head>
+<body>
+<h2>Members of Club: <span th:text="${clubName}"></span></h2>
+<div class="toggle-btns">
+    <button onclick="showSection('members')">Members</button>
+    <button onclick="showSection('events')">Events</button>
+</div>
+<div id="members-section">
+    <table border="1">
+        <thead>
+        <tr>
+            <th>SRN</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Domain</th>
+            <th>Semester</th>
+            <th>Department</th>
+            <th>Phone Number</th>
+            <th>Gender</th>
+            <th>Password</th>
+            <th>Club</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="member : ${members}">
+            <td th:text="${member.srn}"></td>
+            <td th:text="${member.name}"></td>
+            <td th:text="${member.email}"></td>
+            <td th:text="${member.domain}"></td>
+            <td th:text="${member.sem}"></td>
+            <td th:text="${member.dept}"></td>
+            <td th:text="${member.phoneno}"></td>
+            <td th:text="${member.gender}"></td>
+            <td th:text="${member.password}"></td>
+            <td th:text="${member.club}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div id="events-section" style="display:none;">
+    <h2>Club Events</h2>
+    <div th:each="event : ${clubEvents}">
+        <div class="event-hero card">
+            <div class="hero-left">
+                <h2 class="hero-title" th:text="${event.eventName}">Event Name</h2>
+                <div class="hero-sub">Organized by: <span th:text="${event.clubName}">Club Name</span></div>
+                <div class="hero-desc" th:text="${event.description}">Full event description goes here...</div>
+            </div>
+        </div>
+        <div class="details-grid">
+            <div class="detail-card">
+                <div class="label">Date & Time</div>
+                <div class="value" th:text="${#dates.format(event.timestamp, 'yyyy-MM-dd HH:mm')}">Date</div>
+            </div>
+            <div class="detail-card">
+                <div class="label">Location</div>
+                <div class="value" th:text="${event.location}">Location</div>
+            </div>
+            <div class="detail-card">
+                <div class="label">Type</div>
+                <div class="value" th:text="${event.type}">Type</div>
+            </div>
+            <div class="detail-card">
+                <div class="label">Budget</div>
+                <div class="value">₹ <span th:text="${event.budget}">Budget</span></div>
+            </div>
+            <div class="detail-card">
+                <div class="label">Registration Link</div>
+                <div class="value">
+                    <span>Clubhead is the organiser</span>
+                </div>
+            </div>
+        </div>
+        <hr/>
+    </div>
+</div>
+<br>
+<a th:href="@{/club/{clubName}(clubName=${clubName})}">Back to Club Home</a>
+<script>
+    function showSection(section) {
+        document.getElementById('members-section').style.display = section === 'members' ? 'block' : 'none';
+        document.getElementById('events-section').style.display = section === 'events' ? 'block' : 'none';
+    }
+</script>
+</body>
+</html>

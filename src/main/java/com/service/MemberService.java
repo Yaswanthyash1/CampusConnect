@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -46,6 +47,11 @@ public class MemberService {
         return findBySrn(srn);
     }
 
+    public void setMemberClub(String srn, String clubName) {
+        String sql = "UPDATE member SET club = ? WHERE srn = ?";
+        jdbcTemplate.update(sql, clubName, srn);
+    }
+
     private static class MemberRowMapper implements RowMapper<Member> {
         @Override
         public Member mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -59,6 +65,7 @@ public class MemberService {
             member.setPhoneno(rs.getString("phoneno"));
             member.setGender(rs.getString("gender"));
             member.setPassword(rs.getString("password"));
+            member.setClub(rs.getString("club"));
             return member;
         }
     }

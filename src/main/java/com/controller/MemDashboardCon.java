@@ -43,6 +43,11 @@ public class MemDashboardCon {
             // Fetch requests made by this member (show status)
             List<MemberRequest> requests = memberRequestService.getRequestsByMemberId(srn);
             model.addAttribute("requests", requests);
+
+            // Query all clubs for the dropdown
+            List<String> allClubs = jdbcTemplate.query("SELECT clubName FROM club", (rs, rowNum) -> rs.getString("clubName"));
+            model.addAttribute("allClubs", allClubs);
+
             return "member";
         } else {
             return "error";
@@ -66,5 +71,20 @@ public class MemDashboardCon {
             model.addAttribute("errorMessage", "Member not found");
             return "error";
         }
+    }
+
+    @PostMapping("/member/apply-club")
+    public String applyForClub(@RequestParam String clubName, @RequestParam String srn, Model model) {
+        // Create a new member request for joining a club
+        MemberRequest request = new MemberRequest();
+        request.setMemberId(srn);
+        request.setClubName(clubName);
+        request.setType("enroll");
+        request.setDescription("Request to join club " + clubName);
+        request.setStatus("pending");
+        request.setTimestamp(new java.sql.Timestamp(System.currentTimeMillis()));
+        memberRequestService.saveRequest(request);
+        // Redirect back to member dashboard
+        return "redirect:/member/" + srn;
     }
 }

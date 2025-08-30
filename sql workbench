@@ -58,6 +58,20 @@ CREATE TABLE event (
     banner BLOB
 );
 
+CREATE TABLE your_table_name (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    member_id VARCHAR(255),
+    type VARCHAR(255),
+    description VARCHAR(255),
+    file_path VARCHAR(255),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(255),
+    club_name VARCHAR(255)
+);
+
+ALTER TABLE member ADD COLUMN club VARCHAR(255) DEFAULT NULL;
+
+
 SHOW tables;
 
 select * from user;

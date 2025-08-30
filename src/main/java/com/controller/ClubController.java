@@ -26,6 +26,10 @@ public class ClubController {
     private JdbcTemplate jdbcTemplate;
     @Autowired
     private MemberRequestService memberRequestService;
+    @Autowired
+    private com.repository.MemberRepository memberRepository;
+    @Autowired
+    private com.service.MemberService memberService;
 
     @GetMapping("/club/{clubName}")
     public String clubDashboard(@PathVariable String clubName, Model model) {
@@ -146,29 +150,29 @@ public class ClubController {
 
     @PostMapping("/club/{clubName}/requests")
     public String handleClubRequests(@PathVariable String clubName, @RequestParam String action,
-                                     @RequestParam(required = false) Long requestId,
-                                     @RequestParam(required = false) String srn) {
+                                     @RequestParam(required = false) Long requestId) {
         // action = "accept" or "reject"
         try {
             if (requestId != null) {
-                // Update the MemberRequest entity status
                 java.util.Optional<com.model.MemberRequest> opt = memberRequestService.getRequestById(requestId);
                 if (opt.isPresent()) {
                     com.model.MemberRequest req = opt.get();
                     if ("accept".equals(action)) {
                         req.setStatus("accepted");
-                        // record which club approved the request (optional)
                         req.setClubName(clubName);
+                        // Set member's club field
+                        String srn = req.getMemberId();
+                        if (srn != null) {
+                            memberService.setMemberClub(srn, clubName);
+                        }
                     } else if ("reject".equals(action)) {
                         req.setStatus("rejected");
-                        // record which club rejected the request so it appears on processed-requests for this club
                         req.setClubName(clubName);
                     }
                     memberRequestService.saveRequest(req);
                 }
             }
         } catch (Exception e) {
-            // log and continue
             e.printStackTrace();
         }
         return "redirect:/club/" + clubName + "/requests";
@@ -202,8 +206,16 @@ public class ClubController {
         return "processed-requests";
     }
 
+    @GetMapping("/club/{clubName}/manage-members")
+    public String manageMembers(@PathVariable String clubName, Model model) {
+        java.util.List<com.model.Member> members = memberRepository.findByClub(clubName);
+        model.addAttribute("members", members);
+        model.addAttribute("clubName", clubName);
+        return "manage-members";
+    }
+
     private List<Map<String, Object>> getClubMembersByName(String clubName) {
-        String query = "SELECT DISTINCT * FROM clubmember WHERE clubName = ?";
+        String query = "SELECT * FROM member WHERE club = ?";
         return jdbcTemplate.queryForList(query, clubName);
     }
 

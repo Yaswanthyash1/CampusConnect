@@ -130,6 +130,24 @@
         </ul>
     </div>
 
+    <!-- My Club Section -->
+    <div class="my-club-section">
+        <h2>My Club</h2>
+        <div th:if="${member.club == null}">
+            <form method="post" th:action="@{/member/apply-club}">
+                <input name="srn" th:value="${member.srn}" type="hidden"/>
+                <label for="clubName">Apply for a Club:</label>
+                <select id="clubName" name="clubName" required>
+                    <option th:each="club : ${allClubs}" th:text="${club}" th:value="${club}"></option>
+                </select>
+                <button class="nav-btn" type="submit">Apply</button>
+            </form>
+        </div>
+        <div th:if="${member.club != null}">
+            <p>You are a member of <strong th:text="${member.club}"></strong>.</p>
+        </div>
+    </div>
+
     <!-- Member Requests -->
     <div class="member-requests">
         <h2>My Requests</h2>
