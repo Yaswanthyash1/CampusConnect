@@ -64,6 +64,26 @@
         .logout-btn { padding: 8px 12px; border-radius: 8px; background: linear-gradient(145deg,var(--accent),var(--accent2)); border: none; color: #0c1f28; font-weight: 600; cursor: pointer; }
         ul { padding-left: 20px; margin-bottom: 20px; }
         li { margin-bottom: 8px; }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-pending { background: #ffc107; color: #000; }
+        .status-accepted { background: #17a2b8; color: #fff; }
+        .status-rejected { background: #dc3545; color: #fff; }
+        .status-completed { background: #28a745; color: #fff; }
+        .completion-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .completion-yes { background: #28a745; color: #fff; }
+        .completion-no { background: #6c757d; color: #fff; }
     </style>
 </head>
 <body>
@@ -160,6 +180,7 @@
                 <th>Type</th>
                 <th>Description</th>
                 <th>Status</th>
+                <th>Completed</th>
                 <th>Timestamp</th>
                 <th>File</th>
             </tr>
@@ -168,7 +189,15 @@
             <tr th:each="req : ${requests}">
                 <td th:text="${req.type}"></td>
                 <td th:text="${req.description}"></td>
-                <td th:text="${req.status}"></td>
+                <td>
+                    <span class="status-badge" th:class="'status-badge status-' + ${req.status.toLowerCase()}"
+                          th:text="${req.status}"></span>
+                </td>
+                <td>
+                    <span class="completion-badge"
+                          th:class="'completion-badge ' + (${req.isCompleted() != null and req.isCompleted()} ? 'completion-yes' : 'completion-no')"
+                          th:text="${req.isCompleted() != null and req.isCompleted()} ? 'Completed' : 'Pending'"></span>
+                </td>
                 <td th:text="${#dates.format(req.timestamp, 'yyyy-MM-dd HH:mm')}"></td>
                 <td>
                     <a target="_blank"

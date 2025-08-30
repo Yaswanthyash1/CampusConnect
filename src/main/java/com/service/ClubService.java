@@ -79,4 +79,13 @@ public class ClubService {
             return null;
         }
     }
+
+    public String getClubNameByHeadSrn(String headSrn) {
+        String sql = "SELECT clubName FROM club WHERE head_srn = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql, String.class, headSrn);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

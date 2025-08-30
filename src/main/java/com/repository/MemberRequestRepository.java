@@ -19,4 +19,10 @@ public interface MemberRequestRepository extends JpaRepository<MemberRequest, Lo
 
     @Query("SELECT r FROM MemberRequest r WHERE (r.clubName = :clubName OR r.clubName IS NULL) AND r.status = :status ORDER BY r.timestamp DESC")
     List<MemberRequest> findPendingForClub(@Param("clubName") String clubName, @Param("status") String status);
+
+    @Query("SELECT r FROM MemberRequest r WHERE (r.clubName = :clubName AND r.status = :status AND r.type != 'enroll') OR (r.clubName IS NULL AND r.status = :status AND r.type != 'enroll') ORDER BY r.timestamp DESC")
+    List<MemberRequest> findAcceptedNonEnrollRequests(@Param("clubName") String clubName, @Param("status") String status);
+
+    @Query("SELECT r FROM MemberRequest r WHERE r.status = 'accepted' AND r.type != 'enroll' ORDER BY r.timestamp DESC")
+    List<MemberRequest> findAllAcceptedNonEnrollRequests();
 }

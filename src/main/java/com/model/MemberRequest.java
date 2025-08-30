@@ -33,6 +33,9 @@ public class MemberRequest {
     @Column(name = "club_name")
     private String clubName; // optional: the club this request targets (for club join requests)
 
+    @Column(name = "isCompleted")
+    private Boolean isCompleted = false; // Changed from boolean to Boolean to handle NULL values
+
     @PrePersist
     public void prePersist() {
         if (this.timestamp == null) {
@@ -106,6 +109,14 @@ public class MemberRequest {
 
     public void setClubName(String clubName) {
         this.clubName = clubName;
+    }
+
+    public Boolean isCompleted() {
+        return isCompleted;
+    }
+
+    public void setCompleted(Boolean completed) {
+        this.isCompleted = completed;
     }
 
     // Convenience method to return only the filename portion of filePath

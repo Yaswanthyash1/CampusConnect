@@ -51,7 +51,14 @@ public class MemberRequestService {
         // For pending requests, include general requests (clubName IS NULL)
         if ("pending".equalsIgnoreCase(status)) {
             return memberRequestRepository.findPendingForClub(clubName, status);
+        } else if ("accepted".equalsIgnoreCase(status)) {
+            // For accepted requests, include those with the specific clubName AND those with clubName IS NULL (for general requests)
+            return memberRequestRepository.findAcceptedNonEnrollRequests(clubName, status);
         }
         return memberRequestRepository.findByClubNameAndStatus(clubName, status);
+    }
+
+    public List<MemberRequest> getAllAcceptedNonEnrollRequests() {
+        return memberRequestRepository.findAllAcceptedNonEnrollRequests();
     }
 }

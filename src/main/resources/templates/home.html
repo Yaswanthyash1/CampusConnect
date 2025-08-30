@@ -169,6 +169,7 @@
             <a class="btn" href="/club/${userIdentifier}/requests">View Requests</a>
             <a class="btn" href="/club/${userIdentifier}/processed-requests">Processed Requests</a>
             <a class="btn" href="/add-event">Create Event</a>
+            <a class="btn" href="/pending-tasks?userIdentifier=${userIdentifier}">Pending Tasks</a>
           </div>`;
       } else if (userType === 'faculty') {
         roleActionsDiv.innerHTML = `
