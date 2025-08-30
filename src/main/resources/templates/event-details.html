@@ -39,10 +39,12 @@
             <div class="hero-desc" th:text="${event.description}">Full event description goes here...</div>
         </div>
         <div class="hero-actions">
+            <a class="btn btn-disabled" style="pointer-events:none;opacity:0.6;" target="_blank" th:if="${isClubHead}">Registration
+                Disabled for Club Head</a>
             <a class="btn" target="_blank" th:href="${event.registrationLink}"
-               th:if="${isUpcoming} and ${event.registrationLink}">Register Now</a>
+               th:if="${isUpcoming} and !${isClubHead} and ${event.registrationLink}">Register Now</a>
             <span class="btn btn-secondary"
-                  th:if="${isUpcoming} and (event.registrationLink == null or event.registrationLink == '')">Registration Closed</span>
+                  th:if="${isUpcoming} and !${isClubHead} and (event.registrationLink == null or event.registrationLink == '')">Registration Closed</span>
             <span class="btn btn-disabled" th:if="${!isUpcoming}">Event Completed</span>
             <a class="btn btn-secondary" th:href="@{'/events'}">Back to Events</a>
         </div>
@@ -68,10 +70,11 @@
         <div class="detail-card">
             <div class="label">Registration Link</div>
             <div class="value">
+                <span th:if="${isClubHead}">Registration Disabled for Club Head</span>
                 <a target="_blank" th:href="${event.registrationLink}"
-                   th:if="${isUpcoming} and ${event.registrationLink}"
+                   th:if="${isUpcoming} and !${isClubHead} and ${event.registrationLink}"
                    th:text="${event.registrationLink}">Link</a>
-                <span th:if="${isUpcoming} and (event.registrationLink == null or event.registrationLink == '')">Closed</span>
+                <span th:if="${isUpcoming} and !${isClubHead} and (event.registrationLink == null or event.registrationLink == '')">Closed</span>
                 <span th:if="${!isUpcoming}">Event Completed</span>
             </div>
         </div>

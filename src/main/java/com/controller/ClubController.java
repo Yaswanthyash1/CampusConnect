@@ -221,6 +221,36 @@ public class ClubController {
 
     public List<Map<String, Object>> getClubEvents(String clubName) {
         String query = "SELECT * FROM event WHERE clubname = ?";
-        return jdbcTemplate.queryForList(query, clubName);
+        List<Map<String, Object>> rawEvents = jdbcTemplate.queryForList(query, clubName);
+        List<Map<String, Object>> events = new java.util.ArrayList<>();
+        for (Map<String, Object> raw : rawEvents) {
+            Map<String, Object> event = new java.util.HashMap<>();
+            event.put("id", raw.get("id"));
+            event.put("eventname", raw.get("eventname"));
+            event.put("type", raw.get("type"));
+            event.put("loc", raw.get("loc"));
+            event.put("clubname", raw.get("clubname"));
+            event.put("budget", raw.get("budget"));
+            event.put("description", raw.get("description"));
+            // Normalize registration link
+            event.put("registration_link", raw.get("registrationlink"));
+            // Normalize timestamp
+            Object ts = raw.get("timestamp");
+            if (ts != null && !(ts instanceof java.util.Date)) {
+                try {
+                    if (ts instanceof String) {
+                        event.put("timestamp", java.sql.Timestamp.valueOf(((String) ts).replace('T', ' ')));
+                    } else {
+                        event.put("timestamp", null);
+                    }
+                } catch (Exception e) {
+                    event.put("timestamp", null);
+                }
+            } else {
+                event.put("timestamp", ts);
+            }
+            events.add(event);
+        }
+        return events;
     }
 }

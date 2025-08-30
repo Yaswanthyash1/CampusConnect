@@ -1,12 +1,13 @@
 package com.controller;
 
-import com.model.User;
 import com.model.Role;
+import com.model.User;
 import com.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -47,8 +48,8 @@ public class UserController {
 
     @PostMapping("/login")
     public String processLogin(@RequestParam String username,
-                              @RequestParam String password,
-                              Model model) {
+                               @RequestParam String password,
+                               Model model) {
         // Check if username matches a member's email
         com.model.Member member = memberService.findByEmail(username);
         if (member != null && password.equals(member.getPassword())) {
@@ -65,9 +66,15 @@ public class UserController {
         }
     }
 
-    @GetMapping("/member")
-    public String showMemberPage() {
-        return "member";
+    @GetMapping("/member-details/{srn}")
+    public String showMemberDetails(@PathVariable("srn") String srn, Model model) {
+        com.model.Member member = memberService.findBySrn(srn);
+        if (member == null) {
+            model.addAttribute("error", "Member not found");
+            return "member-details";
+        }
+        model.addAttribute("member", member);
+        return "member-details";
     }
 
     @GetMapping("/admin")

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Member Details</title>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan&display=swap" rel="stylesheet">
+    <link href="/css/app.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg,#0f2027,#203a43,#2c5364); color: #fff; font-family: 'League Spartan', sans-serif; }
+        .container { max-width: 600px; margin: 40px auto; background: rgba(255,255,255,0.08); border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.35); padding: 32px; }
+        h1 { color: #3ec1d3; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+        td { padding: 10px; }
+        th { color: #a0e7e5; text-align: left; }
+        .back-btn { padding: 8px 14px; border-radius: 8px; background: linear-gradient(145deg,#3ec1d3,#a0e7e5); color: #0c1f28; font-weight: 600; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Member Details</h1>
+    <table>
+        <tr>
+            <td><strong>SRN:</strong></td>
+            <td th:text="${member.srn}"></td>
+        </tr>
+        <tr>
+            <td><strong>Name:</strong></td>
+            <td th:text="${member.name}"></td>
+        </tr>
+        <tr>
+            <td><strong>Email:</strong></td>
+            <td th:text="${member.email}"></td>
+        </tr>
+        <tr>
+            <td><strong>Domain:</strong></td>
+            <td th:text="${member.domain}"></td>
+        </tr>
+        <tr>
+            <td><strong>Semester:</strong></td>
+            <td th:text="${member.sem}"></td>
+        </tr>
+        <tr>
+            <td><strong>Department:</strong></td>
+            <td th:text="${member.dept}"></td>
+        </tr>
+        <tr>
+            <td><strong>Phone:</strong></td>
+            <td th:text="${member.phoneno}"></td>
+        </tr>
+        <tr>
+            <td><strong>Gender:</strong></td>
+            <td th:text="${member.gender}"></td>
+        </tr>
+        <tr>
+            <td><strong>Password:</strong></td>
+            <td>******** (hidden)</td>
+        </tr>
+        <tr>
+            <td><strong>Club:</strong></td>
+            <td th:text="${member.club}"></td>
+        </tr>
+    </table>
+    <a class="back-btn" href="/club" th:href="@{/club/{clubName}(clubName=${member.club})}">Back to Club</a>
+</div>
+</body>
+</html>
+
