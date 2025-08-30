@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Projects Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg1: #0f2027;
+            --bg2: #203a43;
+            --bg3: #2c5364;
+            --accent: #3ec1d3;
+            --accent2: #a0e7e5;
+            --text: #ffffff;
+            --glass: rgba(255, 255, 255, 0.12);
+            --shadow: 0 10px 25px rgba(0,0,0,0.35);
+            --muted: rgba(255, 255, 255, 0.8);
+        }
+        body {
+            margin: 0;
+            font-family: 'League Spartan', sans-serif;
+            background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 40px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .navbar h1 { margin:0; font-size:28px; }
+        .navbar .right { display: flex; gap: 15px; align-items: center; }
+        .nav-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(145deg,var(--accent),var(--accent2));
+            color: #0c1f28;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform .15s ease;
+            text-decoration: none;
+        }
+        .nav-btn:hover { transform: scale(1.05); }
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 32px;
+            background: var(--glass);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+        }
+        h1 {
+            font-size: 32px;
+            color: var(--accent);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .3s ease;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        .tab-btn.active {
+            background: linear-gradient(145deg, var(--accent), var(--accent2));
+            color: #0c1f28;
+            border-color: var(--accent);
+        }
+        .tab-count {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .tab-btn.active .tab-count {
+            background: rgba(0,0,0,0.2);
+            color: #0c1f28;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--accent2);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .no-projects {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .no-projects-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.8;
+        }
+        .no-projects div {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .no-projects small {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+            margin-top: 20px;
+        }
+        .project-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            border-left: 4px solid var(--accent);
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+            background: linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08));
+        }
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .project-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            margin: 0 0 5px 0;
+            line-height: 1.2;
+        }
+        .project-club {
+            font-size: 14px;
+            color: var(--accent2);
+            font-weight: 600;
+        }
+        .priority-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .priority-high { background: #dc3545; color: #fff; }
+        .priority-medium { background: #ffc107; color: #000; }
+        .priority-low { background: #28a745; color: #fff; }
+        .project-meta {
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .project-meta p {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .project-meta strong {
+            color: var(--accent2);
+        }
+        .project-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .3s ease;
+            text-decoration: none;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-primary {
+            background: linear-gradient(145deg, var(--accent), var(--accent2));
+            color: #0c1f28;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-disabled {
+            background: rgba(255,255,255,0.05);
+            color: var(--muted);
+            cursor: not-allowed;
+        }
+        .btn:hover:not(.btn-disabled) {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-planning { background: #6c757d; color: #fff; }
+        .status-progress { background: #17a2b8; color: #fff; }
+        .status-hold { background: #fd7e14; color: #fff; }
+        .status-completed { background: #28a745; color: #fff; }
+    </style>
+</head>
+<body>
+<!-- Navbar -->
+<div class="navbar">
+    <h1>NITK CLUBS</h1>
+    <div class="right">
+        <a class="nav-btn" href="/home">Back to Home</a>
+        <button class="nav-btn" id="logoutBtn">Logout</button>
+    </div>
+</div>
+
+<div class="container">
+    <h1>Projects Dashboard</h1>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab-btn active" id="upcoming-tab" onclick="showTab('upcoming')">
+            🚀 Upcoming Projects
+            <span class="tab-count" th:text="${#lists.size(upcomingProjects)}">0</span>
+        </button>
+        <button class="tab-btn" id="past-tab" onclick="showTab('past')">
+            📋 Past Projects
+            <span class="tab-count" th:text="${#lists.size(pastProjects)}">0</span>
+        </button>
+    </div>
+
+    <!-- Upcoming Projects Tab Content -->
+    <div class="tab-content active" id="upcoming-content">
+        <div class="section-header">
+            <span class="section-icon">🚀</span>
+            <span>Upcoming Projects</span>
+        </div>
+        <div class="projects-grid" th:if="${!#lists.isEmpty(upcomingProjects)}">
+            <div class="project-card" th:each="project : ${upcomingProjects}">
+                <div class="project-header">
+                    <div>
+                        <h3 class="project-title" th:text="${project.projectName}">Project Name</h3>
+                        <div class="project-club" th:text="${project.clubName}">Club Name</div>
+                    </div>
+                    <span class="priority-badge"
+                          th:classappend="${project.priority.toLowerCase()} == 'high' ? 'priority-high' :
+                                         (${project.priority.toLowerCase()} == 'medium' ? 'priority-medium' : 'priority-low')"
+                          th:text="${project.priority}">Priority</span>
+                </div>
+
+                <div class="project-meta">
+                    <p><strong>📅</strong> <span
+                            th:text="${#dates.format(project.startDate,'dd MMM yyyy')} + ' - ' + ${#dates.format(project.endDate,'dd MMM yyyy')}">Timeline</span>
+                    </p>
+                    <p><strong>👥</strong> <span th:text="${project.teamSize} + ' members'">Team Size</span></p>
+                    <p><strong>💰</strong> ₹<span th:text="${project.budget}">Budget</span></p>
+                    <p><strong>📊</strong>
+                        <span class="status-badge"
+                              th:classappend="${project.status.toLowerCase().replace(' ', '-')} == 'planning' ? 'status-planning' :
+                                             (${project.status.toLowerCase().replace(' ', '-')} == 'in-progress' ? 'status-progress' :
+                                             (${project.status.toLowerCase().replace(' ', '-')} == 'on-hold' ? 'status-hold' : 'status-completed'))"
+                              th:text="${project.status}">Status</span>
+                    </p>
+                </div>
+
+                <div class="project-actions">
+                    <a class="btn btn-primary" th:href="@{'/project-details/' + ${project.id}}">👁️ View Details</a>
+                    <button class="btn btn-secondary" th:onclick="'updateProjectStatus(' + ${project.id} + ')'">📝 Update
+                        Status
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="no-projects" th:if="${#lists.isEmpty(upcomingProjects)}">
+            <div class="no-projects-icon">🚀</div>
+            <div>No upcoming projects at the moment.</div>
+            <small>New projects will appear here once they are scheduled.</small>
+        </div>
+    </div>
+
+    <!-- Past Projects Tab Content -->
+    <div class="tab-content" id="past-content">
+        <div class="section-header">
+            <span class="section-icon">📋</span>
+            <span>Past Projects</span>
+        </div>
+        <div class="projects-grid" th:if="${!#lists.isEmpty(pastProjects)}">
+            <div class="project-card" th:each="project : ${pastProjects}">
+                <div class="project-header">
+                    <div>
+                        <h3 class="project-title" th:text="${project.projectName}">Project Name</h3>
+                        <div class="project-club" th:text="${project.clubName}">Club Name</div>
+                    </div>
+                    <span class="priority-badge"
+                          th:classappend="${project.priority.toLowerCase()} == 'high' ? 'priority-high' :
+                                         (${project.priority.toLowerCase()} == 'medium' ? 'priority-medium' : 'priority-low')"
+                          th:text="${project.priority}">Priority</span>
+                </div>
+
+                <div class="project-meta">
+                    <p><strong>📅</strong> <span
+                            th:text="${#dates.format(project.startDate,'dd MMM yyyy')} + ' - ' + ${#dates.format(project.endDate,'dd MMM yyyy')}">Timeline</span>
+                    </p>
+                    <p><strong>👥</strong> <span th:text="${project.teamSize} + ' members'">Team Size</span></p>
+                    <p><strong>💰</strong> ₹<span th:text="${project.budget}">Budget</span></p>
+                    <p><strong>📊</strong>
+                        <span class="status-badge status-completed">Completed</span>
+                    </p>
+                </div>
+
+                <div class="project-actions">
+                    <a class="btn btn-primary" th:href="@{'/project-details/' + ${project.id}}">👁️ View Details</a>
+                    <span class="btn btn-disabled">Project Completed</span>
+                </div>
+            </div>
+        </div>
+        <div class="no-projects" th:if="${#lists.isEmpty(pastProjects)}">
+            <div class="no-projects-icon">📋</div>
+            <div>No past projects to show.</div>
+            <small>Completed projects will appear here.</small>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all tab contents
+        const allContents = document.querySelectorAll('.tab-content');
+        allContents.forEach(content => {
+            content.classList.remove('active');
+        });
+
+        // Remove active class from all tab buttons
+        const allTabs = document.querySelectorAll('.tab-btn');
+        allTabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Show selected tab content
+        document.getElementById(tabName + '-content').classList.add('active');
+
+        // Add active class to selected tab button
+        document.getElementById(tabName + '-tab').classList.add('active');
+    }
+
+    function updateProjectStatus(projectId) {
+        const status = prompt('Enter new status (Planning, In Progress, On Hold, Completed):');
+        if (status && ['Planning', 'In Progress', 'On Hold', 'Completed'].includes(status)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/project/update-status';
+
+            const projectIdInput = document.createElement('input');
+            projectIdInput.type = 'hidden';
+            projectIdInput.name = 'projectId';
+            projectIdInput.value = projectId;
+
+            const statusInput = document.createElement('input');
+            statusInput.type = 'hidden';
+            statusInput.name = 'status';
+            statusInput.value = status;
+
+            form.appendChild(projectIdInput);
+            form.appendChild(statusInput);
+            document.body.appendChild(form);
+            form.submit();
+        } else if (status) {
+            alert('Invalid status. Please enter one of: Planning, In Progress, On Hold, Completed');
+        }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = '/login';
+    });
+</script>
+</body>
+</html>

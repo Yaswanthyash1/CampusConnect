@@ -275,4 +275,18 @@ public class ProjectController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @GetMapping("/projects-dashboard")
+    public String projectsDashboard(Model model) {
+        // Get upcoming projects (end date is in the future)
+        List<Project> upcomingProjects = projectService.getUpcomingProjects();
+
+        // Get past projects (end date is in the past)
+        List<Project> pastProjects = projectService.getPastProjects();
+
+        model.addAttribute("upcomingProjects", upcomingProjects);
+        model.addAttribute("pastProjects", pastProjects);
+
+        return "projects-dashboard";
+    }
 }

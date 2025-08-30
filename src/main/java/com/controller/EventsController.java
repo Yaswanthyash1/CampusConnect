@@ -44,6 +44,22 @@ public class EventsController {
         return "events";
     }
 
+    @GetMapping("/events-dashboard")
+    public String eventsDashboard(Model model) {
+        Timestamp now = Timestamp.from(Instant.now());
+
+        // Get upcoming events (timestamp after now)
+        List<Event> upcomingEvents = eventRepository.findByTimestampAfterOrderByTimestampAsc(now);
+
+        // Get past events (timestamp before now)
+        List<Event> pastEvents = eventRepository.findByTimestampBeforeOrderByTimestampDesc(now);
+
+        model.addAttribute("upcomingEvents", upcomingEvents);
+        model.addAttribute("pastEvents", pastEvents);
+
+        return "events-dashboard";
+    }
+
     // legacy/alternate paths
     @GetMapping("/upcoming_events")
     public String upcomingEventsLegacy() {
