@@ -51,6 +51,8 @@
         </div>
 
         <a class="pending-requests-btn" th:href="@{'/club/' + ${club.clubName} + '/requests'}">View Pending Requests</a>
+        <a class="pending-requests-btn" style="margin-left:12px"
+           th:href="@{'/club/' + ${club.clubName} + '/processed-requests'}">Processed Requests</a>
         <!-- Link to view pending requests -->
 
         <div class="centered"> <!-- Centered content -->

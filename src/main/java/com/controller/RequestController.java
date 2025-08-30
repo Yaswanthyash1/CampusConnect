@@ -168,11 +168,7 @@ public class RequestController {
             redirectAttributes.addFlashAttribute("message", "Failed to save request: " + ex.getMessage());
         }
 
-        // Redirect member back to their requests page (show their requests)
-        if (memberId == null || memberId.equals("unknown")) {
-            return "redirect:/request";
-        } else {
-            return "redirect:/my-requests?memberId=" + memberId;
-        }
+        // Redirect member back to their home page
+        return "redirect:/home";
     }
 }

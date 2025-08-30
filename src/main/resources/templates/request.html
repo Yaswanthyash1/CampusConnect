@@ -139,20 +139,28 @@
 <div class="container">
     <h2>Member Request Options</h2>
 
-    <div class="option">
-        <h3>Suggest an Idea</h3>
-        <p>Share your ideas to improve clubs, events, or campus life.</p>
-        <button class="btn" onclick="showForm('idea')">Suggest Idea</button>
-    </div>
-    <div class="option">
-        <h3>Raise a Query</h3>
-        <p>Ask questions or raise concerns to club heads or faculty.</p>
-        <button class="btn" onclick="showForm('query')">Raise Query</button>
-    </div>
-    <div class="option">
-        <h3>Project/Event Proposal</h3>
-        <p>Submit a proposal for a new project or event.</p>
-        <button class="btn" onclick="showForm('proposal')">Submit Proposal</button>
+    <!-- Options list -->
+    <div id="optionsContainer">
+        <div class="option">
+            <h3>Suggest an Idea</h3>
+            <p>Share your ideas to improve clubs, events, or campus life.</p>
+            <button class="btn" onclick="showForm('idea')">Suggest Idea</button>
+        </div>
+        <div class="option">
+            <h3>Raise a Query</h3>
+            <p>Ask questions or raise concerns to club heads or faculty.</p>
+            <button class="btn" onclick="showForm('query')">Raise Query</button>
+        </div>
+        <div class="option">
+            <h3>Project Proposal</h3>
+            <p>Submit a proposal for a new project.</p>
+            <button class="btn" onclick="showForm('project')">Submit Proposal</button>
+        </div>
+        <div class="option">
+            <h3>Event Proposal</h3>
+            <p>Propose a new event to be organized by a club.</p>
+            <button class="btn" onclick="showForm('event')">Propose Event</button>
+        </div>
     </div>
 
     <!-- Dynamic Request Form -->
@@ -160,13 +168,15 @@
         <form action="/submit-request" enctype="multipart/form-data" id="requestForm" method="post">
             <input id="requestType" name="type" type="hidden">
             <input id="memberId" name="memberId" type="hidden">
+            <h3 id="selectedTypeTitle" style="color:#a0e7e5;margin-top:0"></h3>
             <label for="description">Description:</label><br>
-            <textarea id="description" name="description" required rows="4"></textarea><br>
+            <textarea id="description" name="description" required rows="6"></textarea><br>
             <label for="requestFile">Upload file (PDF, Word, TXT):</label><br>
             <input accept=".pdf,.doc,.docx,.txt" id="requestFile" name="file" required type="file">
-            <button class="btn" type="submit">Submit Request</button>
-            <button class="btn" onclick="hideForm()" style="background:#a0e7e5;margin-left:10px;" type="button">Cancel
-            </button>
+            <div style="margin-top:12px;display:flex;gap:10px">
+                <button class="btn" type="submit">Submit Request</button>
+                <button class="btn" onclick="hideForm()" style="background:#a0e7e5;" type="button">Back</button>
+            </div>
         </form>
     </div>
 </div>
@@ -176,15 +186,33 @@
         localStorage.clear();
         window.location.href = '/login';
     });
-    function showForm(type) {
-        document.getElementById('requestFormContainer').style.display = 'block';
-        document.getElementById('requestType').value = type;
-        document.getElementById('memberId').value = localStorage.getItem('userIdentifier') || '';
-    }
-    function hideForm() {
-        document.getElementById('requestFormContainer').style.display = 'none';
-        document.getElementById('requestForm').reset();
-    }
+   function showForm(type) {
+       // hide options and show only the form
+       var options = document.getElementById('optionsContainer');
+       if (options) options.style.display = 'none';
+       var formContainer = document.getElementById('requestFormContainer');
+       formContainer.style.display = 'block';
+       document.getElementById('requestType').value = type;
+       document.getElementById('memberId').value = localStorage.getItem('userIdentifier') || '';
+       // set human-readable title
+       var titleMap = {
+           'idea': 'Suggest an Idea',
+           'query': 'Raise a Query',
+           'project': 'Project Proposal',
+           'event': 'Event Proposal'
+       };
+       var title = titleMap[type] || 'Request';
+       document.getElementById('selectedTypeTitle').textContent = title;
+       // focus description
+       setTimeout(function(){ document.getElementById('description').focus(); }, 100);
+   }
+   function hideForm() {
+       var options = document.getElementById('optionsContainer');
+       if (options) options.style.display = 'block';
+       var formContainer = document.getElementById('requestFormContainer');
+       formContainer.style.display = 'none';
+       document.getElementById('requestForm').reset();
+   }
 </script>
 </body>
 </html>

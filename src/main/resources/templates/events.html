@@ -19,8 +19,8 @@
 
 <!-- Page Header -->
 <div class="container header">
-    <h2>Upcoming Events</h2>
-    <p>Discover and register for exciting events happening at NITK</p>
+    <h2 th:text="${title}">Events</h2>
+    <p th:text="${description}">Discover and register for exciting events happening at NITK</p>
 </div>
 
 <!-- Events -->
@@ -41,10 +41,11 @@
             </div>
 
             <div class="event-actions">
-                <a class="btn" target="_blank" th:href="${event.registrationLink}" th:if="${event.registrationLink}">Register
-                    Now</a>
+                <a class="btn" target="_blank" th:href="${event.registrationLink}"
+                   th:if="${isUpcoming} and ${event.registrationLink}">Register Now</a>
                 <span class="btn btn-disabled"
-                      th:if="${event.registrationLink == null or event.registrationLink == ''}">Registration Closed</span>
+                      th:if="${isUpcoming} and (event.registrationLink == null or event.registrationLink == '')">Registration Closed</span>
+                <span class="btn btn-disabled" th:if="${!isUpcoming}">Event Completed</span>
                 <a class="btn btn-secondary" th:href="@{'/event-details/' + ${event.id}}">View Details</a>
             </div>
         </div>
@@ -52,8 +53,9 @@
 
     <!-- Empty state -->
     <div class="empty-state" th:if="${events == null or #lists.isEmpty(events)}">
-        <h3>No Events Found</h3>
-        <p>There are currently no upcoming events. Check back later!</p>
+        <h3 th:text="${title}">No Events Found</h3>
+        <p th:if="${isUpcoming}">There are currently no upcoming events. Check back later!</p>
+        <p th:if="${!isUpcoming}">There are no past events to show.</p>
     </div>
 </div>
 

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Processed Requests</title>
+    <link href="/css/app.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'League Spartan', sans-serif;
+            background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+            color: #fff;
+            margin: 0;
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(8px);
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 18px;
+            min-width: 80px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(145deg,#3ec1d3,#a0e7e5);
+            color: #0c1f28;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            margin-left: 12px;
+            font-size: 14px;
+            transition: filter .2s ease, transform .2s ease;
+        }
+
+        .nav-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 24px auto;
+            padding: 20px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+        }
+
+        h1 {
+            color: #3ec1d3;
+            margin: 0 0 16px 0;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: #3ec1d3;
+            color: #0c1f28;
+            text-decoration: none;
+            margin-right: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn.secondary {
+            background: #a0e7e5;
+        }
+
+        .active {
+            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            text-align: left;
+        }
+
+        th {
+            color: #a0e7e5;
+        }
+
+        .empty {
+            padding: 18px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .counts {
+            margin-left: 6px;
+            color: #a0e7e5;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+    <a class="nav-btn" href="/home">Back</a>
+    <a class="nav-btn" href="#" id="logoutBtn">Logout</a>
+</div>
+
+<!-- Container -->
+<div class="container">
+    <h1 th:text="'Processed Requests — ' + ${clubName}">Processed Requests</h1>
+
+    <div style="margin-bottom:12px;">
+        <button class="btn" id="acceptedBtn" onclick="showSection('accepted')">Accepted
+            <span class="counts" th:text="${#lists.size(acceptedRequests)}"></span>
+        </button>
+        <button class="btn" id="rejectedBtn" onclick="showSection('rejected')">Rejected
+            <span class="counts" th:text="${#lists.size(rejectedRequests)}"></span>
+        </button>
+    </div>
+
+    <!-- Accepted Requests -->
+    <div id="acceptedSection" style="margin-top:16px;">
+        <div th:if="${acceptedRequests != null and !#lists.isEmpty(acceptedRequests)}">
+            <table>
+                <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Timestamp</th>
+                    <th>File</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="req : ${acceptedRequests}">
+                    <td th:text="${req.memberId}"></td>
+                    <td th:text="${req.type}"></td>
+                    <td th:text="${req.description}"></td>
+                    <td th:text="${#dates.format(req.timestamp,'yyyy-MM-dd HH:mm')}"></td>
+                    <td>
+                        <a target="_blank" th:href="@{/request/file/{id}(id=${req.id})}"
+                           th:if="${req.filePath} != null and ${req.filePath} != ''">Download</a>
+                        <span th:if="${req.filePath} == null or ${req.filePath} == ''">No file</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="empty" th:if="${acceptedRequests == null or #lists.isEmpty(acceptedRequests)}">
+            <p>No accepted requests for this club.</p>
+        </div>
+    </div>
+
+    <!-- Rejected Requests -->
+    <div id="rejectedSection" style="margin-top:16px; display:none;">
+        <div th:if="${rejectedRequests != null and !#lists.isEmpty(rejectedRequests)}">
+            <table>
+                <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Timestamp</th>
+                    <th>File</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="req : ${rejectedRequests}">
+                    <td th:text="${req.memberId}"></td>
+                    <td th:text="${req.type}"></td>
+                    <td th:text="${req.description}"></td>
+                    <td th:text="${#dates.format(req.timestamp,'yyyy-MM-dd HH:mm')}"></td>
+                    <td>
+                        <a target="_blank" th:href="@{/request/file/{id}(id=${req.id})}"
+                           th:if="${req.filePath} != null and ${req.filePath} != ''">Download</a>
+                        <span th:if="${req.filePath} == null or ${req.filePath} == ''">No file</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="empty" th:if="${rejectedRequests == null or #lists.isEmpty(rejectedRequests)}">
+            <p>No rejected requests for this club.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showSection(name) {
+        var acc = document.getElementById('acceptedSection');
+        var rej = document.getElementById('rejectedSection');
+        var accBtn = document.getElementById('acceptedBtn');
+        var rejBtn = document.getElementById('rejectedBtn');
+
+        if (name === 'accepted') {
+            acc.style.display = 'block';
+            rej.style.display = 'none';
+            accBtn.classList.add('active');
+            rejBtn.classList.remove('active');
+        } else {
+            acc.style.display = 'none';
+            rej.style.display = 'block';
+            accBtn.classList.remove('active');
+            rejBtn.classList.add('active');
+        }
+    }
+
+    // Default section
+    (function(){
+        var sel = /*[[${selectedStatus}]]*/ '';
+        if (sel === 'rejected') showSection('rejected'); else showSection('accepted');
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', function(){
+            localStorage.clear();
+            window.location.href='/login';
+        });
+    })();
+</script>
+</body>
+</html>

@@ -161,6 +161,8 @@ public class ClubController {
                         req.setClubName(clubName);
                     } else if ("reject".equals(action)) {
                         req.setStatus("rejected");
+                        // record which club rejected the request so it appears on processed-requests for this club
+                        req.setClubName(clubName);
                     }
                     memberRequestService.saveRequest(req);
                 }
@@ -182,6 +184,22 @@ public class ClubController {
         // Provide clubName so the template can post approve/reject actions to the correct club
         model.addAttribute("clubName", clubName);
         return "club-requests";
+    }
+
+    @GetMapping("/club/{clubName}/processed-requests")
+    public String viewProcessedRequests(@PathVariable String clubName,
+                                        @RequestParam(name = "status", required = false) String status,
+                                        Model model) {
+        // Always fetch both accepted and rejected requests so club head can see both lists
+        List<MemberRequest> acceptedRequests = memberRequestService.getRequestsByClubNameAndStatus(clubName, "accepted");
+        List<MemberRequest> rejectedRequests = memberRequestService.getRequestsByClubNameAndStatus(clubName, "rejected");
+        model.addAttribute("acceptedRequests", acceptedRequests);
+        model.addAttribute("rejectedRequests", rejectedRequests);
+        model.addAttribute("clubName", clubName);
+        // Keep selectedStatus for backward compatibility (not required)
+        model.addAttribute("selectedStatus", status == null ? "" : status.toLowerCase());
+        model.addAttribute("isClubHead", true);
+        return "processed-requests";
     }
 
     private List<Map<String, Object>> getClubMembersByName(String clubName) {

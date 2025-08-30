@@ -157,7 +157,8 @@
           <div class="role-card">
             <h3>Member Dashboard</h3>
             <a class="btn" href="/member/${userIdentifier}">My Dashboard</a>
-            <a class="btn" href="/events">Upcoming Events</a>
+            <a class="btn" href="/events/upcoming">Upcoming Events</a>
+            <a class="btn" href="/events/past">Past Events</a>
             <a class="btn" href="/request">Request</a>
           </div>`;
       } else if (userType === 'clubHead') {
@@ -166,6 +167,7 @@
             <h3>Club Head Panel</h3>
             <a class="btn" href="/club/${userIdentifier}">Manage Members</a>
             <a class="btn" href="/club/${userIdentifier}/requests">View Requests</a>
+            <a class="btn" href="/club/${userIdentifier}/processed-requests">Processed Requests</a>
             <a class="btn" href="/add-event">Create Event</a>
           </div>`;
       } else if (userType === 'faculty') {
