@@ -10,22 +10,7 @@ SELECT user, host FROM mysql.user;
 USE clubdb;
 SHOW TABLES;
 
-SELECT * FROM USER;
-CREATE TABLE club (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    club_name VARCHAR(255),
-    description VARCHAR(255),
-    faculty_id VARCHAR(255),
-    club_type VARCHAR(255),
-    head_srn VARCHAR(255),
-    name VARCHAR(255),
-    sem INT,
-    dept VARCHAR(255),
-    phoneno VARCHAR(255),
-    gender VARCHAR(255)
-);
-
-DROP TABLE USER;
+-- User table
 CREATE TABLE user (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) UNIQUE,
@@ -33,6 +18,7 @@ CREATE TABLE user (
     role VARCHAR(255)
 );
 
+-- Member table
 CREATE TABLE member (
     srn VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255),
@@ -42,9 +28,11 @@ CREATE TABLE member (
     dept VARCHAR(255),
     phoneno VARCHAR(255),
     gender VARCHAR(255),
-    password VARCHAR(255)
+    password VARCHAR(255),
+    club VARCHAR(255)
 );
 
+-- Event table
 CREATE TABLE event (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     clubName VARCHAR(255),
@@ -55,55 +43,113 @@ CREATE TABLE event (
     timestamp DATETIME,
     budget DOUBLE,
     registrationLink VARCHAR(255),
-    banner BLOB
+    banner VARBINARY(255),
+    club_name VARCHAR(255),
+    event_name VARCHAR(255),
+    registration_link VARCHAR(255),
+    loc VARCHAR(255)
 );
 
-CREATE TABLE your_table_name (
-    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+-- Club table
+CREATE TABLE club (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    clubName VARCHAR(255),
+    description VARCHAR(255),
+    faculty_id VARCHAR(255),
+    club_type VARCHAR(255),
+    head_srn VARCHAR(255),
+    name VARCHAR(255),
+    phoneno VARCHAR(255),
+    dept VARCHAR(255),
+    gender VARCHAR(255),
+    sem INT,
+    password VARCHAR(255),
+    club_name VARCHAR(255)
+);
+
+-- Faculty table
+CREATE TABLE faculty (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    faculty_name VARCHAR(255) NOT NULL
+);
+
+-- Member Request table
+CREATE TABLE member_request (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     member_id VARCHAR(255),
     type VARCHAR(255),
     description VARCHAR(255),
     file_path VARCHAR(255),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(255),
-    club_name VARCHAR(255)
+    club_name VARCHAR(255),
+    is_completed BIT(1)
 );
 
-ALTER TABLE member ADD COLUMN club VARCHAR(255) DEFAULT NULL;
-
-
+-- Project table
 CREATE TABLE project (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    clubname VARCHAR(255) NOT NULL,
-    projectname VARCHAR(255) NOT NULL,
+    attachments VARCHAR(255),
+    budget DOUBLE,
+    category VARCHAR(255),
+    clubname VARCHAR(255),
+    created_at DATETIME(6),
+    deliverables TEXT,
     description TEXT,
-    category VARCHAR(100),
-    priority VARCHAR(50),
-    startdate DATE,
     enddate DATE,
-    budget DECIMAL(10,2) DEFAULT 0.00,
-    teamsize INT DEFAULT 1,
-    technologies TEXT,
-    objectives TEXT NOT NULL,
-    deliverables TEXT NOT NULL,
     mentor VARCHAR(255),
-    status VARCHAR(50) DEFAULT 'Planning',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    attachments TEXT,
-
-    -- Indexes for better performance
-    INDEX idx_clubname (clubname),
-    INDEX idx_status (status),
-    INDEX idx_category (category),
-    INDEX idx_priority (priority),
-    INDEX idx_startdate (startdate),
-    INDEX idx_created_at (created_at)
+    objectives TEXT,
+    priority VARCHAR(255),
+    projectname VARCHAR(255),
+    startdate DATE,
+    status VARCHAR(255),
+    teamsize INT,
+    technologies TEXT,
+    updated_at DATETIME(6)
 );
 
+-- ClubMember table
+CREATE TABLE clubmember (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    club_name VARCHAR(255),
+    srn VARCHAR(255)
+);
+
+-- Requests table
+CREATE TABLE requests (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    club_name VARCHAR(255),
+    description VARCHAR(255),
+    file_path VARCHAR(255),
+    member_id VARCHAR(255),
+    status VARCHAR(255),
+    timestamp DATETIME(6),
+    type VARCHAR(255)
+);
+
+
+desc user;
+desc member;
+desc event;
+desc club;
+desc faculty;
+desc member_request;
+desc project;
+desc clubmember;
+desc requests;
 
 
 SHOW tables;
 
 select * from user;
 select * from member;
+select * from event;
+select * from club;
+select * from faculty;
+select * from member_request;
+select * from project;
+select * from clubmember;
+select * from requests;
+
