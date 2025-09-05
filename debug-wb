@@ -1,0 +1,16 @@
+SELECT user, host FROM mysql.user;
+
+USE userdb;
+SHOW tables;
+select * from user;
+
+
+USE requestdb;
+SHOW tables;
+select * from request;
+
+USE clubdb;
+drop table if exists clubmember;
+SHOW tables;
+desc club;
+select * from club;
