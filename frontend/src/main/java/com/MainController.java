@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 @Controller
@@ -133,25 +134,191 @@ public class MainController {
     public String showMemberPage(HttpSession session, Model model) {
         // Get the logged-in user's SRN/username from session
         String userIdentifier = (String) session.getAttribute("userIdentifier");
-        if (userIdentifier != null) {
-            try {
-                String url = userServiceUrl + "/user-service/api/user/details?username=" + userIdentifier;
-                ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
-                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                    model.addAttribute("member", response.getBody());
-                }
-            } catch (Exception e) {
-                System.err.println("Error fetching member details for dashboard: " + e.getMessage());
-            }
+        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+
+        if (isAuthenticated == null || !isAuthenticated || userIdentifier == null) {
+            return "redirect:/login";
         }
+
+        // Always provide a member object to avoid null pointer errors
+        Map<String, Object> memberData = new java.util.HashMap<>();
+        memberData.put("name", userIdentifier);
+        memberData.put("srn", userIdentifier);
+        memberData.put("email", "N/A");
+        memberData.put("dept", "N/A");
+        memberData.put("club", "N/A");
+        memberData.put("domain", "N/A");
+        memberData.put("sem", "N/A");
+        memberData.put("phoneno", "N/A");
+        memberData.put("gender", "N/A");
+
+        try {
+            String url = userServiceUrl + "/user-service/api/user/details/srn?srn=" + userIdentifier;
+            System.out.println("Fetching user details from: " + url);
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Map<String, Object> userData = response.getBody();
+                System.out.println("User data received: " + userData);
+
+                // Update memberData with actual data from service
+                if (userData.get("name") != null)
+                    memberData.put("name", userData.get("name"));
+                if (userData.get("srn") != null)
+                    memberData.put("srn", userData.get("srn"));
+                if (userData.get("email") != null)
+                    memberData.put("email", userData.get("email"));
+                if (userData.get("dept") != null)
+                    memberData.put("dept", userData.get("dept"));
+                if (userData.get("club") != null)
+                    memberData.put("club", userData.get("club"));
+                if (userData.get("domain") != null)
+                    memberData.put("domain", userData.get("domain"));
+                if (userData.get("sem") != null)
+                    memberData.put("sem", userData.get("sem"));
+                if (userData.get("phoneno") != null)
+                    memberData.put("phoneno", userData.get("phoneno"));
+                if (userData.get("gender") != null)
+                    memberData.put("gender", userData.get("gender"));
+            } else {
+                // If SRN lookup fails, try username lookup as fallback
+                System.out.println(" I am 2");
+                System.out.println("SRN lookup failed, trying username lookup");
+                String fallbackUrl = userServiceUrl + "/user-service/api/user/details?username=" + userIdentifier;
+                System.out.println("Fetching user details from: " + fallbackUrl);
+                ResponseEntity<Map> fallbackResponse = restTemplate.getForEntity(fallbackUrl, Map.class);
+
+                if (fallbackResponse.getStatusCode().is2xxSuccessful() && fallbackResponse.getBody() != null) {
+                    Map<String, Object> userData = fallbackResponse.getBody();
+                    System.out.println("User data received from fallback: " + userData);
+
+                    // Update memberData with actual data from service
+                    if (userData.get("name") != null)
+                        memberData.put("name", userData.get("name"));
+                    if (userData.get("srn") != null)
+                        memberData.put("srn", userData.get("srn"));
+                    if (userData.get("email") != null)
+                        memberData.put("email", userData.get("email"));
+                    if (userData.get("dept") != null)
+                        memberData.put("dept", userData.get("dept"));
+                    if (userData.get("club") != null)
+                        memberData.put("club", userData.get("club"));
+                    if (userData.get("domain") != null)
+                        memberData.put("domain", userData.get("domain"));
+                    if (userData.get("sem") != null)
+                        memberData.put("sem", userData.get("sem"));
+                    if (userData.get("phoneno") != null)
+                        memberData.put("phoneno", userData.get("phoneno"));
+                    if (userData.get("gender") != null)
+                        memberData.put("gender", userData.get("gender"));
+                } else {
+                    System.err.println(
+                            "Both SRN and username lookup failed. Status: " + fallbackResponse.getStatusCode());
+
+                    // Try one more fallback - see if userIdentifier is actually a user ID
+
+                    try {
+                        Long userId = Long.parseLong(userIdentifier);
+                        String idUrl = userServiceUrl + "/user-service/api/user/details/id?id=" + userId;
+                        System.out.println("Trying ID lookup with: " + idUrl);
+                        ResponseEntity<Map> idResponse = restTemplate.getForEntity(idUrl, Map.class);
+
+                        if (idResponse.getStatusCode().is2xxSuccessful() && idResponse.getBody() != null) {
+                            Map<String, Object> userData = idResponse.getBody();
+                            System.out.println("User data received from ID lookup: " + userData);
+
+                            // Update memberData with actual data from service
+                            if (userData.get("name") != null)
+                                memberData.put("name", userData.get("name"));
+                            if (userData.get("srn") != null)
+                                memberData.put("srn", userData.get("srn"));
+                            if (userData.get("email") != null)
+                                memberData.put("email", userData.get("email"));
+                            if (userData.get("dept") != null)
+                                memberData.put("dept", userData.get("dept"));
+                            if (userData.get("club") != null)
+                                memberData.put("club", userData.get("club"));
+                            if (userData.get("domain") != null)
+                                memberData.put("domain", userData.get("domain"));
+                            if (userData.get("sem") != null)
+                                memberData.put("sem", userData.get("sem"));
+                            if (userData.get("phoneno") != null)
+                                memberData.put("phoneno", userData.get("phoneno"));
+                            if (userData.get("gender") != null)
+                                memberData.put("gender", userData.get("gender"));
+                        }
+                    } catch (NumberFormatException nfe) {
+                        System.err.println("UserIdentifier is not a valid ID: " + userIdentifier);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching member details for dashboard: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        // Fetch all clubs for the dropdown
+        try {
+            String clubServiceUrl = "http://localhost:8082/api/clubs";
+            ResponseEntity<java.util.List> clubsResponse = restTemplate.getForEntity(clubServiceUrl,
+                    java.util.List.class);
+            if (clubsResponse.getStatusCode().is2xxSuccessful() && clubsResponse.getBody() != null) {
+                System.out.println("Clubs fetched successfully: " + clubsResponse.getBody());
+                model.addAttribute("allClubs", clubsResponse.getBody());
+            } else {
+                System.err.println("Failed to fetch clubs. Status: " + clubsResponse.getStatusCode());
+                model.addAttribute("allClubs", java.util.Collections.emptyList());
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching clubs: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("allClubs", java.util.Collections.emptyList());
+        }
+
+        System.out.println("Member data for template: " + memberData);
+        System.out.println("Member club value: " + memberData.get("club"));
+        System.out.println("Member club is null: " + (memberData.get("club") == null));
+        System.out.println("Member club equals 'N/A': " + "N/A".equals(memberData.get("club")));
+
+        model.addAttribute("member", memberData);
         return "member";
+    }
+
+    @PostMapping("/member/apply-club")
+    public String applyForClub(@RequestParam String srn, @RequestParam String clubName,
+            HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        try {
+            // Create club enrollment request
+            Map<String, Object> requestData = new HashMap<>();
+            requestData.put("srn", srn);
+            requestData.put("type", "Club Enrollment");
+            requestData.put("description", "Request to join " + clubName + " club");
+            requestData.put("clubName", clubName);
+            requestData.put("status", "pending");
+
+            // Send request to request-service
+            String requestServiceUrl = "http://localhost:8083/api/requests";
+            ResponseEntity<String> response = restTemplate.postForEntity(requestServiceUrl, requestData, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Club enrollment request submitted successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Failed to submit club enrollment request.");
+            }
+        } catch (Exception e) {
+            System.err.println("Error submitting club enrollment request: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Error submitting request: " + e.getMessage());
+        }
+
+        return "redirect:/member";
     }
 
     @GetMapping("/member/{srn}")
     public String showMemberDetails(@PathVariable String srn, Model model) {
         try {
             // Fetch member details from user-service
-            String userServiceUrl = "http://localhost:8081/user-service/api/user/details?username=" + srn;
+            String userServiceUrl = "http://localhost:8081/user-service/api/user/details/srn?srn=" + srn;
             RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<Map> response = restTemplate.getForEntity(userServiceUrl, Map.class);
 

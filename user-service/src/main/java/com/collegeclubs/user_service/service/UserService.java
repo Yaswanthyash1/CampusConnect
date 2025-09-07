@@ -30,13 +30,22 @@ public class UserService {
     }
 
     public void register(Map<String, Object> requestBody) {
+        String srn = (String) requestBody.get("srn");
+        String username = (String) requestBody.get("username");
+        String role = (String) requestBody.get("role");
+
+        // For members, if username is null, use srn as username
+        if ("member".equalsIgnoreCase(role) && (username == null || username.trim().isEmpty())) {
+            username = srn;
+        }
+
         registerUser(
-                (String) requestBody.get("srn"),
-                (String) requestBody.get("username"),
+                srn,
+                username,
                 (String) requestBody.get("name"),
                 (String) requestBody.get("email"),
                 (String) requestBody.get("password"),
-                (String) requestBody.get("role"),
+                role,
                 (String) requestBody.get("domain"),
                 requestBody.get("sem") != null && !requestBody.get("sem").toString().isEmpty()
                         ? Integer.parseInt(requestBody.get("sem").toString())
@@ -71,6 +80,32 @@ public class UserService {
             }, username);
         } catch (Exception e) {
             System.err.println("Error finding user by username: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public User findBySrn(String srn) {
+        String sql = "SELECT * FROM user WHERE srn = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                User user = new User();
+                user.setId(rs.getLong("id"));
+                user.setSrn(rs.getString("srn"));
+                user.setUsername(rs.getString("username"));
+                user.setName(rs.getString("name"));
+                user.setEmail(rs.getString("email"));
+                user.setPassword(rs.getString("password"));
+                user.setRole(rs.getString("role"));
+                user.setDomain(rs.getString("domain"));
+                user.setSem(rs.getObject("sem", Integer.class));
+                user.setDept(rs.getString("dept"));
+                user.setPhoneno(rs.getString("phoneno"));
+                user.setGender(rs.getString("gender"));
+                user.setClub(rs.getString("club"));
+                return user;
+            }, srn);
+        } catch (Exception e) {
+            System.err.println("Error finding user by SRN: " + e.getMessage());
             return null;
         }
     }
@@ -124,6 +159,32 @@ public class UserService {
             jdbcTemplate.update(sql, user.getName(), user.getEmail(), user.getPassword(), user.getDomain(),
                     user.getSem(), user.getDept(),
                     user.getPhoneno(), user.getGender(), user.getClub(), user.getSrn());
+        }
+    }
+
+    public User findById(Long id) {
+        String sql = "SELECT * FROM user WHERE id = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                User user = new User();
+                user.setId(rs.getLong("id"));
+                user.setSrn(rs.getString("srn"));
+                user.setUsername(rs.getString("username"));
+                user.setName(rs.getString("name"));
+                user.setEmail(rs.getString("email"));
+                user.setPassword(rs.getString("password"));
+                user.setRole(rs.getString("role"));
+                user.setDomain(rs.getString("domain"));
+                user.setSem(rs.getObject("sem", Integer.class));
+                user.setDept(rs.getString("dept"));
+                user.setPhoneno(rs.getString("phoneno"));
+                user.setGender(rs.getString("gender"));
+                user.setClub(rs.getString("club"));
+                return user;
+            }, id);
+        } catch (Exception e) {
+            System.err.println("Error finding user by ID: " + e.getMessage());
+            return null;
         }
     }
 

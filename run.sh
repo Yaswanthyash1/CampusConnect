@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $1 == 'clean' ]; then
+if [ "$1" == 'clean' ]; then
     echo "Cleaning up..."
     cd request-service && ./gradlew clean
     cd ../user-service && ./gradlew clean

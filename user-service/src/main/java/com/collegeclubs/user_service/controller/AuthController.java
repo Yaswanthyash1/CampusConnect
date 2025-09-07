@@ -50,15 +50,22 @@ public class AuthController {
         String password = (String) payload.get("password");
         Map<String, Object> resp = new HashMap<>();
 
+        System.out.println("UserType: " + userType);
+        System.out.println("Full payload: " + payload);
+
         try {
             boolean isValid = false;
             String role = "";
 
             if ("member".equalsIgnoreCase(userType)) {
                 identifier = (String) payload.get("srn");
+                System.out.println("Member login - SRN identifier: " + identifier);
+                System.out.println("SRN from payload.get('srn'): " + payload.get("srn"));
                 isValid = userService.validateUser(identifier, password);
                 role = "member";
                 resp.put("userIdentifier", identifier);
+                System.out.println("Setting userIdentifier for member: " + identifier);
+                System.out.println("Response map before return: " + resp);
             } else if ("faculty".equalsIgnoreCase(userType)) {
                 identifier = (String) payload.get("email");
                 isValid = userService.validateFaculty(identifier, password);

@@ -26,6 +26,17 @@ public class ClubController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @GetMapping("/clubs")
+    public List<String> getAllClubs() {
+        try {
+            String sql = "SELECT clubName FROM club";
+            return jdbcTemplate.queryForList(sql, String.class);
+        } catch (Exception e) {
+            System.err.println("Error fetching all clubs: " + e.getMessage());
+            return java.util.Collections.emptyList();
+        }
+    }
+
     @GetMapping("/club/{clubName}")
     public String clubDashboard(@PathVariable String clubName, Model model) {
         Club club = clubService.getClubDetailsByName(clubName);

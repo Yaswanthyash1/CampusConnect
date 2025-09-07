@@ -133,42 +133,50 @@
 <div class="container">
     <h1>Welcome to Your Member Dashboard</h1>
 
+    <!-- Success/Error Messages -->
+    <div th:if="${successMessage}" style="background: #28a745; color: white; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+        <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" style="background: #dc3545; color: white; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+        <span th:text="${errorMessage}"></span>
+    </div>
+
     <!-- Member Information -->
     <div class="card member-info">
-        <h2>Hello, <span th:text="${member.name}"></span>!</h2>
+        <h2>Hello, <span th:text="${member != null ? member.name : 'Member'}"></span>!</h2>
         <h2>Member Information</h2>
         <table>
             <tr>
                 <td><b>SRN:</b></td>
-                <td th:text="${member.srn}"></td>
+                <td th:text="${member != null ? member.srn : 'N/A'}"></td>
             </tr>
             <tr>
                 <td><b>Name:</b></td>
-                <td th:text="${member.name}"></td>
+                <td th:text="${member != null ? member.name : 'N/A'}"></td>
             </tr>
             <tr>
                 <td><b>Email:</b></td>
-                <td th:text="${member.email}"></td>
+                <td th:text="${member != null ? member.email : 'N/A'}"></td>
             </tr>
             <tr>
                 <td><b>Domain:</b></td>
-                <td th:text="${member.domain}"></td>
+                <td th:text="${member != null ? member.domain : 'N/A'}"></td>
             </tr>
             <tr>
                 <td><b>Semester:</b></td>
-                <td th:text="${member.sem}"></td>
+                <td th:text="${member != null ? member.sem : 'N/A'}"></td>
             </tr>
             <tr>
                 <td><b>Department:</b></td>
-                <td th:text="${member.dept}"></td>
+                <td th:text="${member != null ? member.dept : 'N/A'}"></td>
             </tr>
             <tr>
                 <td><b>Phone:</b></td>
-                <td th:text="${member.phoneno}"></td>
+                <td th:text="${member != null ? member.phoneno : 'N/A'}"></td>
             </tr>
             <tr>
                 <td><b>Gender:</b></td>
-                <td th:text="${member.gender}"></td>
+                <td th:text="${member != null ? member.gender : 'N/A'}"></td>
             </tr>
             <tr>
                 <td><b>Password:</b></td>
@@ -188,17 +196,22 @@
     <!-- My Club Section -->
     <div class="card my-club-section">
         <h2>My Club</h2>
-        <div th:if="${member.club == null}">
-            <form method="post" th:action="@{/member/apply-club}">
-                <input name="srn" th:value="${member.srn}" type="hidden"/>
-                <label for="clubName">Apply for a Club:</label>
-                <select id="clubName" name="clubName" required>
-                    <option th:each="club : ${allClubs}" th:text="${club}" th:value="${club}"></option>
-                </select>
-                <button class="nav-btn" type="submit">Apply</button>
+        
+        <div th:if="${member == null or member.club == null or member.club == 'N/A' or #strings.isEmpty(member.club)}">
+            <p style="margin-bottom: 15px;">You are not currently a member of any club.</p>
+            <form method="post" th:action="@{/member/apply-club}" style="display: block;">
+                <input name="srn" th:value="${member != null ? member.srn : ''}" type="hidden"/>
+                <div style="margin-bottom: 12px;">
+                    <label for="clubName" style="display: block; margin-bottom: 8px; font-weight: 600;">Apply for a Club:</label>
+                    <select id="clubName" name="clubName" required style="width: 200px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; font-family: inherit;">
+                        <option value="" style="color: #000;">-- Select a Club --</option>
+                        <option th:each="club : ${allClubs}" th:text="${club}" th:value="${club}" style="color: #000;"></option>
+                    </select>
+                </div>
+                <button class="nav-btn" type="submit" style="margin-top: 8px;">Apply for Club</button>
             </form>
         </div>
-        <div th:if="${member.club != null}">
+        <div th:if="${member != null and member.club != null and member.club != 'N/A' and !#strings.isEmpty(member.club)}">
             <p>You are a member of <strong th:text="${member.club}"></strong>.</p>
         </div>
     </div>

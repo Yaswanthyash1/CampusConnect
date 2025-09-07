@@ -4,11 +4,9 @@ import com.collegeclubs.user_service.model.Role;
 import com.collegeclubs.user_service.model.User;
 import com.collegeclubs.user_service.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
 @RestController
 @RequestMapping("/user-service/api/user")
 public class UserController {
@@ -27,12 +25,17 @@ public class UserController {
 
     @GetMapping("/details/srn")
     public User getUserDetailsBySrn(@RequestParam String srn) {
-        return userService.findByUsername(srn); // SRN is used as username in the system
+        return userService.findBySrn(srn);
+    }
+
+    @GetMapping("/details/id")
+    public User getUserDetailsById(@RequestParam Long id) {
+        return userService.findById(id);
     }
 
     @GetMapping("/setUserClub")
     public String setUserClub(@RequestParam String srn, @RequestParam String clubName) {
-        User user = userService.findByUsername(srn);
+        User user = userService.findBySrn(srn);
         if (user != null) {
             // Save club name to user
             user.setClub(clubName);
