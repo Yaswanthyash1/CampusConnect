@@ -166,13 +166,47 @@ public class UserService {
     }
 
     public void saveUser(User user) {
-        // if user type is member, then check srn and update all the fields in user
-        // table
-        if ("member".equalsIgnoreCase(user.getRole())) {
-            String sql = "UPDATE user SET name = ?, email = ?, password = ?, domain = ?, sem = ?, dept = ?, phoneno = ?, gender = ?, club = ? WHERE srn = ?";
-            jdbcTemplate.update(sql, user.getName(), user.getEmail(), user.getPassword(), user.getDomain(),
-                    user.getSem(), user.getDept(),
-                    user.getPhoneno(), user.getGender(), user.getClub(), user.getSrn());
+        try {
+            System.out.println("Attempting to save user: ID=" + user.getId() + ", SRN=" + user.getSrn() + ", Role=" + user.getRole() + ", Club=" + user.getClub());
+
+            // Update user regardless of role (since role might be null for existing users)
+            // Use ID for update if available, otherwise use SRN
+            if (user.getId() != null) {
+                String sql = "UPDATE user SET name = ?, email = ?, password = ?, role = ?, domain = ?, sem = ?, dept = ?, phoneno = ?, gender = ?, club = ? WHERE id = ?";
+                int rowsAffected = jdbcTemplate.update(sql,
+                    user.getName(),
+                    user.getEmail(),
+                    user.getPassword(),
+                    user.getRole(),
+                    user.getDomain(),
+                    user.getSem(),
+                    user.getDept(),
+                    user.getPhoneno(),
+                    user.getGender(),
+                    user.getClub(),
+                    user.getId());
+                System.out.println("Updated user by ID. Rows affected: " + rowsAffected);
+            } else if (user.getSrn() != null) {
+                String sql = "UPDATE user SET name = ?, email = ?, password = ?, role = ?, domain = ?, sem = ?, dept = ?, phoneno = ?, gender = ?, club = ? WHERE srn = ?";
+                int rowsAffected = jdbcTemplate.update(sql,
+                    user.getName(),
+                    user.getEmail(),
+                    user.getPassword(),
+                    user.getRole(),
+                    user.getDomain(),
+                    user.getSem(),
+                    user.getDept(),
+                    user.getPhoneno(),
+                    user.getGender(),
+                    user.getClub(),
+                    user.getSrn());
+                System.out.println("Updated user by SRN. Rows affected: " + rowsAffected);
+            } else {
+                System.err.println("Cannot save user: both ID and SRN are null");
+            }
+        } catch (Exception e) {
+            System.err.println("Error saving user: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

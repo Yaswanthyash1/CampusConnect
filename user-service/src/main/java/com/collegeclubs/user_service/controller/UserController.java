@@ -67,6 +67,7 @@ public class UserController {
             String clubName = (String) requestData.get("clubName");
 
             if (userId == null || clubName == null) {
+                System.err.println("Missing required parameters: userId=" + userId + ", clubName=" + clubName);
                 return "Missing required parameters: userId and clubName";
             }
 
@@ -77,16 +78,20 @@ public class UserController {
             try {
                 Long id = Long.parseLong(userId);
                 user = userService.findById(id);
+                System.out.println("Found user by ID: " + id + " -> " + (user != null ? user.getName() : "null"));
             } catch (NumberFormatException e) {
+                System.out.println("User ID is not a number, trying as SRN: " + userId);
                 // If not a valid ID, try SRN
                 user = userService.findBySrn(userId);
+                System.out.println("Found user by SRN: " + userId + " -> " + (user != null ? user.getName() : "null"));
             }
 
             if (user != null) {
+                String oldClub = user.getClub();
                 // Save club name to user
                 user.setClub(clubName);
                 userService.saveUser(user);
-                System.out.println("User's club updated successfully for user: " + userId);
+                System.out.println("User's club updated successfully for user: " + userId + " (Name: " + user.getName() + ") from '" + oldClub + "' to '" + clubName + "'");
                 return "User's club updated successfully.";
             } else {
                 System.err.println("User not found for ID/SRN: " + userId);

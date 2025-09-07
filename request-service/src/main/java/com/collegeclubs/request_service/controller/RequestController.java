@@ -25,6 +25,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -45,6 +46,8 @@ public class RequestController {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    private RestTemplate restTemplate = new RestTemplate();
 
     @GetMapping("/club-requests")
     @ResponseBody
@@ -98,17 +101,57 @@ public class RequestController {
                 return ResponseEntity.badRequest().body("Invalid action");
             }
 
+            // First, get the request details to get the member ID
+            String getRequestSql = "SELECT member_id, clubName, type FROM request WHERE id = ?";
+            Map<String, Object> requestDetails = jdbcTemplate.queryForMap(getRequestSql, requestId);
+            String memberId = (String) requestDetails.get("member_id");
+            String requestClubName = (String) requestDetails.get("clubName");
+            String requestType = (String) requestDetails.get("type");
+
+            // Update the request status
             String sql = "UPDATE request SET status = ? WHERE id = ?";
             int updated = jdbcTemplate.update(sql, status, requestId);
 
             if (updated > 0) {
                 System.out.println("Request " + requestId + " status updated to: " + status);
+
+                // If the request is accepted and it's a Club Enrollment request, update user's club
+                if ("accepted".equals(status) && memberId != null && requestClubName != null &&
+                    "Club Enrollment".equalsIgnoreCase(requestType)) {
+                    try {
+                        // Call user service to update user's club
+                        String userServiceUrl = "http://localhost:8081/user-service/api/user/update-club";
+
+                        Map<String, Object> updateData = new HashMap<>();
+                        updateData.put("userId", memberId);
+                        updateData.put("clubName", requestClubName);
+
+                        System.out.println("Club Enrollment request accepted - Calling user service to update club for user: " + memberId + " to club: " + requestClubName);
+                        System.out.println("Request data being sent: " + updateData);
+
+                        ResponseEntity<String> userResponse = restTemplate.postForEntity(userServiceUrl, updateData, String.class);
+
+                        if (userResponse.getStatusCode().is2xxSuccessful()) {
+                            System.out.println("Successfully updated user's club field for Club Enrollment: " + userResponse.getBody());
+                        } else {
+                            System.err.println("Failed to update user's club field for Club Enrollment. Status: " + userResponse.getStatusCode() + ", Body: " + userResponse.getBody());
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error calling user service to update club for Club Enrollment: " + e.getMessage());
+                        e.printStackTrace();
+                        // Don't fail the whole operation if user service call fails
+                    }
+                } else if ("accepted".equals(status)) {
+                    System.out.println("Request accepted but not a Club Enrollment request (type: " + requestType + "), skipping user club update");
+                }
+
                 return ResponseEntity.ok("Request status updated successfully");
             } else {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
             System.err.println("Error updating request status: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating request status");
         }
     }
