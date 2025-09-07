@@ -17,19 +17,4 @@ USE requestdb;
 SHOW tables;
 
 desc request;
-
--- -- Request table
--- CREATE TABLE request (
---     id BIGINT AUTO_INCREMENT PRIMARY KEY,
---     member_id VARCHAR(255),
---     type VARCHAR(255),
---     description VARCHAR(255),
---     file_path VARCHAR(255),
---     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     status VARCHAR(255),
---     clubName VARCHAR(255),
---     is_completed BIT(1)
--- );
-
-
 select * from request;

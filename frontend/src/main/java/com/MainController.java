@@ -337,7 +337,9 @@ public class MainController {
             } else {
                 model.addAttribute("requests", java.util.Collections.emptyList());
             }
-        } catch (Exception e) {
+        } catch (
+
+        Exception e) {
             System.err.println("Error fetching member requests: " + e.getMessage());
             e.printStackTrace();
             model.addAttribute("requests", java.util.Collections.emptyList());
@@ -625,6 +627,112 @@ public class MainController {
         }
 
         return "pending-tasks";
+    }
+
+    // Show processed (accepted/rejected) requests for a club
+    @GetMapping("/club/{clubName}/processed-requests")
+    public String showProcessedRequests(
+            @PathVariable String clubName,
+            @RequestParam(name = "status", required = false) String status,
+            Model model,
+            HttpSession session) {
+
+        // Security check: Ensure the logged-in user is the head of this club
+        String userIdentifier = (String) session.getAttribute("userIdentifier");
+        String userType = (String) session.getAttribute("userType");
+        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+
+        if (isAuthenticated == null || !isAuthenticated || !"clubhead".equalsIgnoreCase(userType)) {
+            return "redirect:/login"; // Or an error page
+        }
+
+        try {
+            // Verify that the logged-in user is the head of the club they are trying to
+            // access
+            String userUrl = userServiceUrl + "/user-service/api/user/details/srn?srn=" + userIdentifier;
+            ResponseEntity<Map> userResponse = restTemplate.getForEntity(userUrl, Map.class);
+
+            if (userResponse.getStatusCode().is2xxSuccessful() && userResponse.getBody() != null) {
+                String headOfClub = (String) userResponse.getBody().get("club");
+                if (!clubName.equalsIgnoreCase(headOfClub)) {
+                    // If not the head, redirect or show an error
+                    return "redirect:/home";
+                }
+            } else {
+                // User details not found, treat as an error
+                return "redirect:/home";
+            }
+
+            // Call club-service to get processed requests for this club
+            String clubServiceUrl = "http://localhost:8082/club-service/api/club/" + clubName + "/processed-requests";
+            if (status != null && !status.isEmpty()) {
+                clubServiceUrl += "?status=" + status;
+            }
+
+            // Use ParameterizedTypeReference for safe deserialization
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    clubServiceUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
+                    });
+
+            Map<String, Object> data = (response.getStatusCode().is2xxSuccessful() && response.getBody() != null)
+                    ? response.getBody()
+                    : new java.util.HashMap<>();
+
+            // Process timestamps for accepted requests
+            if (data.get("acceptedRequests") instanceof java.util.List) {
+                java.util.List<Map<String, Object>> accepted = (java.util.List<Map<String, Object>>) data
+                        .get("acceptedRequests");
+                for (Map<String, Object> req : accepted) {
+                    if (req.get("timestamp") instanceof String) {
+                        try {
+                            req.put("timestamp",
+                                    java.time.LocalDateTime.parse((String) req.get("timestamp")));
+                        } catch (java.time.format.DateTimeParseException e) {
+                            System.err.println("Could not parse timestamp: " + req.get("timestamp"));
+                            req.put("timestamp", null); // Set to null if parsing fails
+                        }
+                    }
+                }
+            }
+
+            // Process timestamps for rejected requests
+            if (data.get("rejectedRequests") instanceof java.util.List) {
+                java.util.List<Map<String, Object>> rejected = (java.util.List<Map<String, Object>>) data
+                        .get("rejectedRequests");
+                for (Map<String, Object> req : rejected) {
+                    if (req.get("timestamp") instanceof String) {
+                        try {
+                            req.put("timestamp",
+                                    java.time.LocalDateTime.parse((String) req.get("timestamp")));
+                        } catch (java.time.format.DateTimeParseException e) {
+                            System.err.println("Could not parse timestamp: " + req.get("timestamp"));
+                            req.put("timestamp", null);
+                        }
+                    }
+                }
+            }
+
+            model.addAttribute("acceptedRequests",
+                    data.getOrDefault("acceptedRequests", java.util.Collections.emptyList()));
+            model.addAttribute("rejectedRequests",
+                    data.getOrDefault("rejectedRequests", java.util.Collections.emptyList()));
+            model.addAttribute("clubName", data.getOrDefault("clubName", clubName));
+            model.addAttribute("selectedStatus", data.getOrDefault("selectedStatus", status == null ? "" : status));
+            model.addAttribute("isClubHead", true); // Since we've verified it
+
+        } catch (Exception e) {
+            System.err.println("Error fetching processed requests: " + e.getMessage());
+            e.printStackTrace(); // For better debugging
+            model.addAttribute("acceptedRequests", java.util.Collections.emptyList());
+            model.addAttribute("rejectedRequests", java.util.Collections.emptyList());
+            model.addAttribute("clubName", clubName);
+            model.addAttribute("selectedStatus", status == null ? "" : status);
+            model.addAttribute("isClubHead", false);
+        }
+        return "processed-requests";
     }
 
     @PostMapping("/handle-enrollment-request")

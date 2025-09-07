@@ -133,8 +133,8 @@ public class ClubController {
     public ResponseEntity<String> handleClubRequests(@PathVariable String clubName, @RequestParam String action,
             @RequestParam(required = false) Long requestId) {
         try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
             if (requestId != null) {
-                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
                 String requestServiceUrl = "http://localhost:8083/update-request-status";
                 Map<String, Object> requestBody = new HashMap<>();
                 requestBody.put("requestId", requestId);
@@ -143,7 +143,29 @@ public class ClubController {
                 restTemplate.postForObject(requestServiceUrl, requestBody, String.class);
             }
             // if request is enrollment and is accpeted by club head then update user's club field in the table via user service
-            
+            String userServiceUrl = "http://localhost:8081";
+            String userApiUrl = userServiceUrl + "/user-service/api/user" + "/setUserClub";
+            if ("accept".equalsIgnoreCase(action)) {
+                Map<String, Object> requestDetails = new HashMap<>();
+                requestDetails.put("requestId", requestId);
+                // Fetch request details to get the user's SRN
+                String fetchRequestUrl = "http://localhost:8083/club-requests/" + requestId;
+                org.springframework.http.ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                        fetchRequestUrl,
+                        org.springframework.http.HttpMethod.GET, null,
+                        new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
+                        });
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    requestDetails = response.getBody();
+                    String srn = (String) requestDetails.get("srn");
+                    if (srn != null && !srn.isEmpty()) {
+                        // Call user service to update user's club
+                        String updateUserClubUrl = userApiUrl + "?srn=" + srn + "&clubName=" + clubName + "&action=accept";
+                        restTemplate.postForObject(updateUserClubUrl, null, String.class);
+                    }
+                }
+            }
+
             return ResponseEntity.ok("Request processed");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
