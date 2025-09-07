@@ -71,4 +71,8 @@ public class RequestService {
     public List<Request> getAllAcceptedNonEnrollRequests() {
         return requestRepository.findAllAcceptedNonEnrollRequests();
     }
+
+    public List<Request> getProcessedRequestsByClub(String clubName) {
+        return requestRepository.findProcessedRequestsByClub(clubName);
+    }
 }

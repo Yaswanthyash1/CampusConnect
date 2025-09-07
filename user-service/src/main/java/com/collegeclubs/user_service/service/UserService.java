@@ -30,16 +30,22 @@ public class UserService {
     }
 
     public void register(Map<String, Object> requestBody) {
-        String srn = (String) requestBody.get("srn");
-        String username = (String) requestBody.get("username");
         String role = (String) requestBody.get("role");
-
-        // For members, if username is null, use srn as username
-        if ("member".equalsIgnoreCase(role) && (username == null || username.trim().isEmpty())) {
-            username = srn;
+        if (role == null || role.trim().isEmpty()) {
+            // Fallback: use userType if present
+            Object userTypeObj = requestBody.get("userType");
+            if (userTypeObj != null) {
+                role = userTypeObj.toString();
+            }
         }
-
-        registerUser(
+        if ("member".equalsIgnoreCase(role)) {
+            String srn = (String) requestBody.get("srn");
+            String username = (String) requestBody.get("username");
+            // For members, if username is null, use srn as username
+            if (username == null || username.trim().isEmpty()) {
+                username = srn;
+            }
+            registerUser(
                 srn,
                 username,
                 (String) requestBody.get("name"),
@@ -48,14 +54,18 @@ public class UserService {
                 role,
                 (String) requestBody.get("domain"),
                 requestBody.get("sem") != null && !requestBody.get("sem").toString().isEmpty()
-                        ? Integer.parseInt(requestBody.get("sem").toString())
-                        : null,
+                    ? Integer.valueOf(requestBody.get("sem").toString()) : null,
                 (String) requestBody.get("dept"),
                 (String) requestBody.get("phoneno"),
                 (String) requestBody.get("gender"),
-                (String) requestBody.get("club"));
-
-        //
+                (String) requestBody.get("club")
+            );
+        } else if ("club".equalsIgnoreCase(role)) {
+            // Do not register clubs in the user table
+            System.out.println("Club registration: skipping user table insert.");
+        } else {
+            throw new IllegalArgumentException("Unknown role: " + role);
+        }
     }
 
     public User findByUsername(String username) {
@@ -87,7 +97,7 @@ public class UserService {
     public User findBySrn(String srn) {
         String sql = "SELECT * FROM user WHERE srn = ?";
         try {
-            return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+            java.util.List<User> users = jdbcTemplate.query(sql, (rs, rowNum) -> {
                 User user = new User();
                 user.setId(rs.getLong("id"));
                 user.setSrn(rs.getString("srn"));
@@ -104,6 +114,10 @@ public class UserService {
                 user.setClub(rs.getString("club"));
                 return user;
             }, srn);
+            if (users.isEmpty()) {
+                return null;
+            }
+            return users.get(0);
         } catch (Exception e) {
             System.err.println("Error finding user by SRN: " + e.getMessage());
             return null;

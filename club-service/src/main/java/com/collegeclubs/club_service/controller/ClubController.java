@@ -149,7 +149,7 @@ public class ClubController {
                 Map<String, Object> requestDetails = new HashMap<>();
                 requestDetails.put("requestId", requestId);
                 // Fetch request details to get the user's SRN
-                String fetchRequestUrl = "http://localhost:8083/club-requests/" + requestId;
+                String fetchRequestUrl = "http://localhost:8083/request/" + requestId;
                 org.springframework.http.ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                         fetchRequestUrl,
                         org.springframework.http.HttpMethod.GET, null,

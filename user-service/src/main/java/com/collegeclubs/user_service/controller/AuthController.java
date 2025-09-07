@@ -25,7 +25,7 @@ public class AuthController {
             String userType = (String) requestBody.get("userType");
             if ("club".equalsIgnoreCase(userType)) {
                 // Call club-service to register the club in clubdb
-                String clubServiceUrl = "http://localhost:8082/api/register-club";
+                String clubServiceUrl = "http://localhost:8082/club-service/api/club/register";
                 org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
                 restTemplate.postForObject(clubServiceUrl, requestBody, String.class);
             }

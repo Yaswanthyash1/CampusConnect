@@ -302,4 +302,16 @@ public class RequestController {
         model.addAttribute("request", request);
         return "request-details";
     }
+
+    @GetMapping("/club/{clubName}/processed-requests")
+    @ResponseBody
+    public ResponseEntity<List<Request>> getProcessedRequestsForClub(@PathVariable String clubName) {
+        try {
+            List<Request> processedRequests = requestService.getProcessedRequestsByClub(clubName);
+            return ResponseEntity.ok(processedRequests);
+        } catch (Exception e) {
+            System.err.println("Error fetching processed requests: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
 }

@@ -40,13 +40,31 @@ public class MainController {
     }
 
     @GetMapping("/")
-    public String showHomePage() {
+    public String showHomePage(HttpSession session, Model model) {
+        addClubNameIfClubHead(session, model);
         return "home";
     }
 
     @GetMapping("/home")
-    public String showHome() {
+    public String showHome(HttpSession session, Model model) {
+        addClubNameIfClubHead(session, model);
         return "home";
+    }
+
+    private void addClubNameIfClubHead(HttpSession session, Model model) {
+        String userType = (String) session.getAttribute("userType");
+        String userIdentifier = (String) session.getAttribute("userIdentifier");
+        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+
+        // Set default values to avoid null pointer issues in template
+        model.addAttribute("isClubHead", false);
+        model.addAttribute("clubName", null);
+
+        if (isAuthenticated != null && isAuthenticated && "clubHead".equalsIgnoreCase(userType) && userIdentifier != null) {
+            // For club heads, userIdentifier is the club name itself
+            model.addAttribute("clubName", userIdentifier);
+            model.addAttribute("isClubHead", true);
+        }
     }
 
     @GetMapping("/login")
@@ -532,7 +550,7 @@ public class MainController {
         }
 
         // Check if user is a club head or admin
-        if (userType == null || (!userType.equalsIgnoreCase("clubhead") && !userType.equalsIgnoreCase("admin"))) {
+        if (userType == null || (!userType.equalsIgnoreCase("clubHead") && !userType.equalsIgnoreCase("admin"))) {
             return "redirect:/home";
         }
 
@@ -642,32 +660,42 @@ public class MainController {
         String userType = (String) session.getAttribute("userType");
         Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
 
-        if (isAuthenticated == null || !isAuthenticated || !"clubhead".equalsIgnoreCase(userType)) {
+        System.out.println("DEBUG showProcessedRequests: userIdentifier=" + userIdentifier +
+                          ", userType=" + userType + ", isAuthenticated=" + isAuthenticated +
+                          ", clubName=" + clubName);
+
+        if (isAuthenticated == null || !isAuthenticated ||
+            (userType == null || (!userType.equalsIgnoreCase("clubHead") && !userType.equalsIgnoreCase("clubHead")))) {
+            System.out.println("DEBUG: Authentication or userType check failed, redirecting to login");
             return "redirect:/login"; // Or an error page
         }
 
         try {
-            // Verify that the logged-in user is the head of the club they are trying to
-            // access
-            String userUrl = userServiceUrl + "/user-service/api/user/details/srn?srn=" + userIdentifier;
-            ResponseEntity<Map> userResponse = restTemplate.getForEntity(userUrl, Map.class);
+            // For club heads, the userIdentifier is actually the club name
+            // So we can skip the user service call and directly verify the club
+            String headOfClub = userIdentifier; // userIdentifier is the club name for club heads
 
-            if (userResponse.getStatusCode().is2xxSuccessful() && userResponse.getBody() != null) {
-                String headOfClub = (String) userResponse.getBody().get("club");
-                if (!clubName.equalsIgnoreCase(headOfClub)) {
-                    // If not the head, redirect or show an error
-                    return "redirect:/home";
-                }
-            } else {
-                // User details not found, treat as an error
+            System.out.println("DEBUG: Club head's club: '" + headOfClub + "', requested clubName: '" + clubName + "'");
+
+            if (headOfClub == null) {
+                System.out.println("DEBUG: User has no club assigned, redirecting to home");
                 return "redirect:/home";
             }
+
+            if (!clubName.equalsIgnoreCase(headOfClub)) {
+                // If not the head, redirect or show an error
+                System.out.println("DEBUG: Club mismatch - user's club: '" + headOfClub + "', requested: '" + clubName + "', redirecting to home");
+                return "redirect:/home";
+            }
+            System.out.println("DEBUG: Club verification passed, proceeding to fetch processed requests");
 
             // Call club-service to get processed requests for this club
             String clubServiceUrl = "http://localhost:8082/club-service/api/club/" + clubName + "/processed-requests";
             if (status != null && !status.isEmpty()) {
                 clubServiceUrl += "?status=" + status;
             }
+
+            System.out.println("DEBUG: Calling club service: " + clubServiceUrl);
 
             // Use ParameterizedTypeReference for safe deserialization
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
@@ -676,6 +704,9 @@ public class MainController {
                     null,
                     new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
                     });
+
+            System.out.println("DEBUG: Club service response status: " + response.getStatusCode());
+            System.out.println("DEBUG: Club service response body: " + response.getBody());
 
             Map<String, Object> data = (response.getStatusCode().is2xxSuccessful() && response.getBody() != null)
                     ? response.getBody()
@@ -688,11 +719,15 @@ public class MainController {
                 for (Map<String, Object> req : accepted) {
                     if (req.get("timestamp") instanceof String) {
                         try {
-                            req.put("timestamp",
-                                    java.time.LocalDateTime.parse((String) req.get("timestamp")));
+                            // Parse timestamp with timezone support
+                            String timestampStr = (String) req.get("timestamp");
+                            java.time.OffsetDateTime offsetDateTime = java.time.OffsetDateTime.parse(timestampStr);
+                            // Convert to LocalDateTime for display
+                            req.put("timestamp", offsetDateTime.toLocalDateTime());
                         } catch (java.time.format.DateTimeParseException e) {
                             System.err.println("Could not parse timestamp: " + req.get("timestamp"));
-                            req.put("timestamp", null); // Set to null if parsing fails
+                            // Keep the original string if parsing fails
+                            req.put("timestamp", req.get("timestamp"));
                         }
                     }
                 }
@@ -705,11 +740,15 @@ public class MainController {
                 for (Map<String, Object> req : rejected) {
                     if (req.get("timestamp") instanceof String) {
                         try {
-                            req.put("timestamp",
-                                    java.time.LocalDateTime.parse((String) req.get("timestamp")));
+                            // Parse timestamp with timezone support
+                            String timestampStr = (String) req.get("timestamp");
+                            java.time.OffsetDateTime offsetDateTime = java.time.OffsetDateTime.parse(timestampStr);
+                            // Convert to LocalDateTime for display
+                            req.put("timestamp", offsetDateTime.toLocalDateTime());
                         } catch (java.time.format.DateTimeParseException e) {
                             System.err.println("Could not parse timestamp: " + req.get("timestamp"));
-                            req.put("timestamp", null);
+                            // Keep the original string if parsing fails
+                            req.put("timestamp", req.get("timestamp"));
                         }
                     }
                 }
@@ -753,7 +792,7 @@ public class MainController {
         }
 
         // Check if user is a club head or admin
-        if (userType == null || (!userType.equalsIgnoreCase("clubhead") && !userType.equalsIgnoreCase("admin"))) {
+        if (userType == null || (!userType.equalsIgnoreCase("clubHead") && !userType.equalsIgnoreCase("admin"))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User does not have permission");
         }
         try {

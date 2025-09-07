@@ -443,35 +443,6 @@
             <small>Event requests will appear here once accepted.</small>
         </div>
     </div>
-
-    <!-- Enrollments Tab Content -->
-    <div class="tab-content" id="enrollments-content">
-        <div class="section-header">
-            <span class="section-icon">👥</span>
-            <span>Club Enrollment Requests</span>
-        </div>
-        <ul class="task-list" th:if="${!#lists.isEmpty(enrollments)}">
-            <li th:each="request : ${enrollments}">
-                <p><strong>Member SRN:</strong> <span class="member-id" th:text="${request.memberId}"></span></p>
-                <p><strong>Description:</strong> <span class="description" th:text="${request.description}"></span></p>
-                <p><strong>Submitted:</strong> <span th:text="${request.timestamp}"></span></p>
-                <div class="request-actions">
-                    <button class="complete-btn" th:onclick="'completeEnrollment(' + ${request.id} + ')'">✔️ Accept</button>
-                    <button class="reject-btn" th:onclick="'rejectEnrollment(' + ${request.id} + ')'">❌ Reject</button>
-                    <button class="view-details-btn"
-                            th:onclick="'viewRequestDetails(' + ${request.id} + ')'">🔍 View Details
-                    </button>
-                </div>
-            </li>
-        </ul>
-        <div class="no-tasks" th:if="${#lists.isEmpty(enrollments)}">
-            <div class="no-tasks-icon">👥</div>
-            <div>No pending club enrollment requests at the moment.</div>
-            <small>Club enrollment requests will appear here once submitted.</small>
-        </div>
-    </div>
-
-
 </div>
 
 <!-- Modal Structure -->
