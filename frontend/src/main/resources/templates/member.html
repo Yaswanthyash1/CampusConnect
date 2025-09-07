@@ -197,7 +197,7 @@
     <div class="card my-club-section">
         <h2>My Club</h2>
         
-        <div th:if="${member == null or member.club == null or member.club == 'N/A' or #strings.isEmpty(member.club)}">
+        <div th:if="${member == null or member.club == null or member.club == 'N/A' or #strings.isEmpty(member.club) or #strings.isEmpty(#strings.trim(member.club))}">
             <p style="margin-bottom: 15px;">You are not currently a member of any club.</p>
             <form method="post" th:action="@{/member/apply-club}" style="display: block;">
                 <input name="srn" th:value="${member != null ? member.srn : ''}" type="hidden"/>
@@ -211,7 +211,7 @@
                 <button class="nav-btn" type="submit" style="margin-top: 8px;">Apply for Club</button>
             </form>
         </div>
-        <div th:if="${member != null and member.club != null and member.club != 'N/A' and !#strings.isEmpty(member.club)}">
+        <div th:if="${member != null and member.club != null and member.club != 'N/A' and !#strings.isEmpty(member.club) and !#strings.isEmpty(#strings.trim(member.club))}">
             <p>You are a member of <strong th:text="${member.club}"></strong>.</p>
         </div>
     </div>
@@ -237,17 +237,17 @@
             <tr th:each="req : ${requests}">
                 <td th:text="${req.type}"></td>
                 <td th:text="${req.description}"></td>
-                <td><span class="status-badge" th:class="'status-badge status-' + ${req.status.toLowerCase()}"
-                          th:text="${req.status}"></span></td>
+                <td><span class="status-badge" th:class="'status-badge status-' + ${req.status != null ? req.status.toLowerCase() : 'unknown'}"
+                          th:text="${req.status != null ? req.status : 'Unknown'}"></span></td>
                 <td><span class="completion-badge"
-                          th:class="'completion-badge ' + (${req.isCompleted() != null and req.isCompleted()} ? 'completion-yes' : 'completion-no')"
-                          th:text="${req.isCompleted() != null and req.isCompleted()} ? 'Completed' : 'Pending'"></span>
+                          th:class="'completion-badge ' + (${req.completed == true} ? 'completion-yes' : 'completion-no')"
+                          th:text="${req.completed == true} ? 'Completed' : 'Pending'"></span>
                 </td>
-                <td th:text="${#dates.format(req.timestamp, 'yyyy-MM-dd HH:mm')}"></td>
+                <td th:text="${req.timestamp != null ? req.timestamp : 'N/A'}"></td>
                 <td>
                     <a target="_blank" th:href="@{/request/file/{id}(id=${req.id})}"
-                       th:if="${req.filePath} != null and ${req.filePath} != ''" th:text="${req.fileName}"></a>
-                    <span th:if="${req.filePath} == null or ${req.filePath} == ''">No file</span>
+                       th:if="${req.filePath != null and req.filePath != ''}" th:text="${req.fileName != null ? req.fileName : 'File'}"></a>
+                    <span th:if="${req.filePath == null or req.filePath == ''}">No file</span>
                 </td>
             </tr>
             </tbody>

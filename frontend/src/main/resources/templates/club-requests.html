@@ -59,13 +59,13 @@
             <td th:text="${req.description}"></td>
             <td th:text="${req.memberId}"></td>
             <td th:text="${req.status}"></td>
-            <td th:text="${#dates.format(req.timestamp, 'yyyy-MM-dd HH:mm')}"></td>
+            <td th:text="${req.timestamp != null ? req.timestamp : 'N/A'}"></td>
             <td>
                 <a class="download-link" target="_blank"
                    th:href="@{/request/file/{id}(id=${req.id})}"
-                   th:if="${req.filePath} != null and ${req.filePath} != ''"
-                   th:text="${req.fileName}">Download</a>
-                <span th:if="${req.filePath} == null or ${req.filePath} == ''">No file</span>
+                   th:if="${req.filePath != null and req.filePath != ''}"
+                   th:text="${req.fileName != null ? req.fileName : 'Download'}">Download</a>
+                <span th:if="${req.filePath == null or req.filePath == ''}">No file</span>
             </td>
             <td th:if="${isClubHead}">
                 <form method="post" style="display:inline-block;margin-right:6px;"

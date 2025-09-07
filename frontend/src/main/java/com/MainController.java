@@ -170,8 +170,13 @@ public class MainController {
                     memberData.put("email", userData.get("email"));
                 if (userData.get("dept") != null)
                     memberData.put("dept", userData.get("dept"));
-                if (userData.get("club") != null)
-                    memberData.put("club", userData.get("club"));
+                if (userData.get("club") != null && !userData.get("club").toString().trim().isEmpty()) {
+                    String clubValue = userData.get("club").toString().trim();
+                    System.out.println("DEBUG: User has club from service: " + clubValue);
+                    memberData.put("club", clubValue);
+                } else {
+                    System.out.println("DEBUG: User club from service is null or empty");
+                }
                 if (userData.get("domain") != null)
                     memberData.put("domain", userData.get("domain"));
                 if (userData.get("sem") != null)
@@ -201,8 +206,13 @@ public class MainController {
                         memberData.put("email", userData.get("email"));
                     if (userData.get("dept") != null)
                         memberData.put("dept", userData.get("dept"));
-                    if (userData.get("club") != null)
-                        memberData.put("club", userData.get("club"));
+                    if (userData.get("club") != null && !userData.get("club").toString().trim().isEmpty()) {
+                        String clubValue = userData.get("club").toString().trim();
+                        System.out.println("DEBUG: User has club from fallback service: " + clubValue);
+                        memberData.put("club", clubValue);
+                    } else {
+                        System.out.println("DEBUG: User club from fallback service is null or empty");
+                    }
                     if (userData.get("domain") != null)
                         memberData.put("domain", userData.get("domain"));
                     if (userData.get("sem") != null)
@@ -236,8 +246,13 @@ public class MainController {
                                 memberData.put("email", userData.get("email"));
                             if (userData.get("dept") != null)
                                 memberData.put("dept", userData.get("dept"));
-                            if (userData.get("club") != null)
-                                memberData.put("club", userData.get("club"));
+                            if (userData.get("club") != null && !userData.get("club").toString().trim().isEmpty()) {
+                                String clubValue = userData.get("club").toString().trim();
+                                System.out.println("DEBUG: User has club from ID lookup service: " + clubValue);
+                                memberData.put("club", clubValue);
+                            } else {
+                                System.out.println("DEBUG: User club from ID lookup service is null or empty");
+                            }
                             if (userData.get("domain") != null)
                                 memberData.put("domain", userData.get("domain"));
                             if (userData.get("sem") != null)
@@ -257,11 +272,15 @@ public class MainController {
             e.printStackTrace();
         }
 
-        // Fetch all clubs for the dropdown
+        // Fetch all clubs for the dropdown (use unified club API)
         try {
-            String clubServiceUrl = "http://localhost:8082/api/clubs";
-            ResponseEntity<java.util.List> clubsResponse = restTemplate.getForEntity(clubServiceUrl,
-                    java.util.List.class);
+            String clubServiceUrl = "http://localhost:8082/club-service/api/club/all-names";
+            ResponseEntity<java.util.List<String>> clubsResponse = restTemplate.exchange(
+                    clubServiceUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<String>>() {
+                    });
             if (clubsResponse.getStatusCode().is2xxSuccessful() && clubsResponse.getBody() != null) {
                 System.out.println("Clubs fetched successfully: " + clubsResponse.getBody());
                 model.addAttribute("allClubs", clubsResponse.getBody());
@@ -273,6 +292,56 @@ public class MainController {
             System.err.println("Error fetching clubs: " + e.getMessage());
             e.printStackTrace();
             model.addAttribute("allClubs", java.util.Collections.emptyList());
+        }
+
+        // Fetch member's requests
+        try {
+            String requestServiceUrl = "http://localhost:8083/my-requests?memberId=" + userIdentifier;
+
+            // Use ParameterizedTypeReference to properly deserialize the response
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> requestsResponse = restTemplate.exchange(
+                    requestServiceUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
+
+            if (requestsResponse.getStatusCode().is2xxSuccessful() && requestsResponse.getBody() != null) {
+                // Process the requests to ensure proper format for the template
+                java.util.List<java.util.Map<String, Object>> processedRequests = new java.util.ArrayList<>();
+
+                for (java.util.Map<String, Object> req : requestsResponse.getBody()) {
+                    // Create a new map with the correct property names
+                    java.util.Map<String, Object> processedReq = new java.util.HashMap<>(req);
+
+                    // Fix the isCompleted field
+                    if (req.containsKey("completed")) {
+                        processedReq.put("completed", req.get("completed"));
+                    } else {
+                        processedReq.put("completed", false);
+                    }
+
+                    // Format timestamp if needed
+                    if (req.containsKey("timestamp") && req.get("timestamp") != null) {
+                        // Keep timestamp as is - we'll handle formatting in the template
+                        processedReq.put("timestamp", req.get("timestamp"));
+                    } else {
+                        processedReq.put("timestamp", "N/A");
+                    }
+
+                    processedRequests.add(processedReq);
+                }
+
+                model.addAttribute("requests", processedRequests);
+                System.out.println("Member requests fetched: " + processedRequests.size());
+            } else {
+                model.addAttribute("requests", java.util.Collections.emptyList());
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching member requests: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("requests", java.util.Collections.emptyList());
+            model.addAttribute("requests", java.util.Collections.emptyList());
         }
 
         System.out.println("Member data for template: " + memberData);
@@ -302,7 +371,8 @@ public class MainController {
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 redirectAttributes.addFlashAttribute("successMessage",
-                        "Club enrollment request submitted successfully!");
+                        "Club enrollment request submitted successfully! It has been sent to " + clubName
+                                + " club head for approval.");
             } else {
                 redirectAttributes.addFlashAttribute("errorMessage", "Failed to submit club enrollment request.");
             }
@@ -342,14 +412,95 @@ public class MainController {
 
     @GetMapping("/club/{clubName}")
     public String showClubPage(@PathVariable String clubName, Model model) {
+        // Fetch club details from unified club API
+        try {
+            String clubDetailsUrl = "http://localhost:8082/club-service/api/club/" + clubName;
+            ResponseEntity<Map> response = restTemplate.getForEntity(clubDetailsUrl, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                model.addAttribute("club", response.getBody());
+            } else {
+                model.addAttribute("club", java.util.Collections.emptyMap());
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching club details: " + e.getMessage());
+            model.addAttribute("club", java.util.Collections.emptyMap());
+        }
         model.addAttribute("clubName", clubName);
         return "club";
     }
 
     @GetMapping("/club/{clubName}/requests")
     public String showClubRequests(@PathVariable String clubName, Model model) {
+        // Fetch club requests from unified club API
+        try {
+            String clubRequestsUrl = "http://localhost:8082/club-service/api/club/" + clubName + "/requests";
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> requestsResponse = restTemplate.exchange(
+                    clubRequestsUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
+            if (requestsResponse.getStatusCode().is2xxSuccessful() && requestsResponse.getBody() != null) {
+                model.addAttribute("requests", requestsResponse.getBody());
+            } else {
+                model.addAttribute("requests", java.util.Collections.emptyList());
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching club requests: " + e.getMessage());
+            model.addAttribute("requests", java.util.Collections.emptyList());
+        }
         model.addAttribute("clubName", clubName);
+        model.addAttribute("isClubHead", true);
         return "club-requests";
+    }
+
+    @PostMapping("/club/{clubName}/requests")
+    public String handleClubRequests(@PathVariable String clubName,
+            @RequestParam String action,
+            @RequestParam(required = false) Long requestId,
+            RedirectAttributes redirectAttributes) {
+        try {
+            System.out.println("DEBUG: Frontend handling club request for club: " + clubName +
+                    ", action: " + action + ", requestId: " + requestId);
+
+            // Forward the POST request to unified club API
+            String clubServiceUrl = "http://localhost:8082/club-service/api/club/" + clubName + "/requests";
+
+            // Prepare the request body
+            MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
+            requestBody.add("action", action);
+            if (requestId != null) {
+                requestBody.add("requestId", requestId);
+            }
+
+            // Create headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            // Create the HTTP entity
+            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+            // Make the POST request to club-service
+            ResponseEntity<String> response = restTemplate.postForEntity(clubServiceUrl, entity, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                System.out.println("Successfully forwarded request to club-service");
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Request " + action + "ed successfully!");
+            } else {
+                System.err.println("Error forwarding to club-service: " + response.getStatusCode());
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Failed to " + action + " request. Please try again.");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Exception forwarding POST to club-service: " + e.getMessage());
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "An error occurred while processing the request. Please try again.");
+        }
+
+        return "redirect:/club/" + clubName + "/requests";
     }
 
     @GetMapping("/event")
@@ -366,6 +517,238 @@ public class MainController {
     @GetMapping("/events")
     public String showEventsPage() {
         return "events";
+    }
+
+    @GetMapping("/pending-tasks")
+    public String showPendingTasks(Model model, HttpSession session) {
+        String userIdentifier = (String) session.getAttribute("userIdentifier");
+        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+        String userType = (String) session.getAttribute("userType");
+
+        if (isAuthenticated == null || !isAuthenticated || userIdentifier == null) {
+            return "redirect:/login";
+        }
+
+        // Check if user is a club head or admin
+        if (userType == null || (!userType.equalsIgnoreCase("clubhead") && !userType.equalsIgnoreCase("admin"))) {
+            return "redirect:/home";
+        }
+
+        try {
+            // Get the club the user is head of
+            String userUrl = userServiceUrl + "/user-service/api/user/details/srn?srn=" + userIdentifier;
+            ResponseEntity<Map> userResponse = restTemplate.getForEntity(userUrl, Map.class);
+
+            String clubName = null;
+            if (userResponse.getStatusCode().is2xxSuccessful() && userResponse.getBody() != null) {
+                clubName = (String) userResponse.getBody().get("club");
+                System.out.println("Club head's club: " + clubName);
+            }
+
+            // Fetch all requests from request-service
+            String requestUrl = "http://localhost:8083/club-requests";
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> requestsResponse = restTemplate.exchange(
+                    requestUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
+
+            if (requestsResponse.getStatusCode().is2xxSuccessful() && requestsResponse.getBody() != null) {
+                java.util.List<java.util.Map<String, Object>> allRequests = requestsResponse.getBody();
+
+                System.out.println("DEBUG: Total requests fetched: " + allRequests.size());
+
+                // Categorize requests by type
+                java.util.List<java.util.Map<String, Object>> ideas = new java.util.ArrayList<>();
+                java.util.List<java.util.Map<String, Object>> queries = new java.util.ArrayList<>();
+                java.util.List<java.util.Map<String, Object>> projects = new java.util.ArrayList<>();
+                java.util.List<java.util.Map<String, Object>> events = new java.util.ArrayList<>();
+                java.util.List<java.util.Map<String, Object>> enrollments = new java.util.ArrayList<>();
+
+                for (java.util.Map<String, Object> request : allRequests) {
+                    String requestClub = (String) request.get("clubName");
+                    String status = (String) request.get("status");
+                    String type = (String) request.get("type");
+
+                    System.out.println("DEBUG Request: type=" + type + ", club=" + requestClub + ", status=" + status);
+
+                    // Only show requests for this club head's club and with pending status
+                    boolean clubMatch = (clubName != null && requestClub != null &&
+                            requestClub.trim().equalsIgnoreCase(clubName.trim()));
+                    boolean isPending = (status != null && status.trim().equalsIgnoreCase("pending"));
+
+                    if (clubMatch && isPending) {
+                        if (type != null) {
+                            if (type.equalsIgnoreCase("idea")) {
+                                ideas.add(request);
+                            } else if (type.equalsIgnoreCase("query")) {
+                                queries.add(request);
+                            } else if (type.equalsIgnoreCase("project")) {
+                                projects.add(request);
+                            } else if (type.equalsIgnoreCase("event")) {
+                                events.add(request);
+                            } else if (type.equalsIgnoreCase("Club Enrollment")) {
+                                enrollments.add(request);
+                            }
+                        }
+                    }
+                }
+
+                System.out.println("DEBUG: Filtered requests - ideas: " + ideas.size() +
+                        ", queries: " + queries.size() +
+                        ", projects: " + projects.size() +
+                        ", events: " + events.size() +
+                        ", enrollments: " + enrollments.size());
+
+                model.addAttribute("ideas", ideas);
+                model.addAttribute("queries", queries);
+                model.addAttribute("projects", projects);
+                model.addAttribute("events", events);
+                model.addAttribute("enrollments", enrollments);
+            } else {
+                model.addAttribute("ideas", java.util.Collections.emptyList());
+                model.addAttribute("queries", java.util.Collections.emptyList());
+                model.addAttribute("projects", java.util.Collections.emptyList());
+                model.addAttribute("events", java.util.Collections.emptyList());
+                model.addAttribute("enrollments", java.util.Collections.emptyList());
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error fetching pending tasks: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("ideas", java.util.Collections.emptyList());
+            model.addAttribute("queries", java.util.Collections.emptyList());
+            model.addAttribute("projects", java.util.Collections.emptyList());
+            model.addAttribute("events", java.util.Collections.emptyList());
+            model.addAttribute("enrollments", java.util.Collections.emptyList());
+        }
+
+        return "pending-tasks";
+    }
+
+    @PostMapping("/handle-enrollment-request")
+    @ResponseBody
+    public ResponseEntity<String> handleEnrollmentRequest(
+            @RequestParam("requestId") Long requestId,
+            @RequestParam("action") String action,
+            HttpSession session) {
+
+        System.out.println("Handling enrollment request: requestId=" + requestId + ", action=" + action);
+
+        String userIdentifier = (String) session.getAttribute("userIdentifier");
+        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+        String userType = (String) session.getAttribute("userType");
+
+        if (isAuthenticated == null || !isAuthenticated || userIdentifier == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated");
+        }
+
+        // Check if user is a club head or admin
+        if (userType == null || (!userType.equalsIgnoreCase("clubhead") && !userType.equalsIgnoreCase("admin"))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User does not have permission");
+        }
+        try {
+            // Get the club the user is head of
+            String userUrl = userServiceUrl + "/user-service/api/user/details/srn?srn=" + userIdentifier;
+            ResponseEntity<Map> userResponse = restTemplate.getForEntity(userUrl, Map.class);
+
+            String clubName = null;
+            if (userResponse.getStatusCode().is2xxSuccessful() && userResponse.getBody() != null) {
+                clubName = (String) userResponse.getBody().get("club");
+                System.out.println("Club head's club: " + clubName);
+            }
+
+            if (clubName == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Club head is not associated with any club");
+            }
+
+            // First, get the request details to verify it's for this club and to get member
+            // ID
+            String requestUrl = "http://localhost:8083/club-requests";
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> requestsResponse = restTemplate.exchange(
+                    requestUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
+
+            String memberId = null;
+            boolean requestFound = false;
+
+            if (requestsResponse.getStatusCode().is2xxSuccessful() && requestsResponse.getBody() != null) {
+                for (java.util.Map<String, Object> request : requestsResponse.getBody()) {
+                    // Match the request ID
+                    if (request.get("id") != null && request.get("id").toString().equals(requestId.toString())) {
+                        // Verify it's for this club
+                        String requestClub = (String) request.get("clubName");
+                        String status = (String) request.get("status");
+                        String type = (String) request.get("type");
+
+                        if (requestClub != null && requestClub.trim().equalsIgnoreCase(clubName.trim()) &&
+                                status != null && status.trim().equalsIgnoreCase("pending") &&
+                                type != null && type.trim().equalsIgnoreCase("Club Enrollment")) {
+
+                            memberId = (String) request.get("memberId");
+                            requestFound = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!requestFound || memberId == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Valid enrollment request not found");
+            }
+
+            // Update the request status in request-service
+            String updateUrl = "http://localhost:8083/update-request-status";
+
+            Map<String, Object> requestData = new HashMap<>();
+            requestData.put("requestId", requestId);
+            requestData.put("action", action);
+            requestData.put("clubName", clubName);
+
+            ResponseEntity<String> updateResponse = restTemplate.postForEntity(
+                    updateUrl,
+                    requestData,
+                    String.class);
+
+            if (!updateResponse.getStatusCode().is2xxSuccessful()) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Failed to update request status: " + updateResponse.getBody());
+            }
+
+            // If request was accepted, update the member's club in user-service
+            if ("accept".equals(action)) {
+                String userUpdateUrl = userServiceUrl + "/user-service/api/user/update-club";
+
+                Map<String, Object> userData = new HashMap<>();
+                userData.put("userId", memberId);
+                userData.put("clubName", clubName);
+
+                ResponseEntity<String> userUpdateResponse = restTemplate.postForEntity(
+                        userUpdateUrl,
+                        userData,
+                        String.class);
+
+                if (!userUpdateResponse.getStatusCode().is2xxSuccessful()) {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("Request status updated, but failed to update member's club: "
+                                    + userUpdateResponse.getBody());
+                }
+
+                return ResponseEntity.ok("Enrollment request accepted and member added to club");
+            } else {
+                return ResponseEntity.ok("Enrollment request rejected");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error handling enrollment request: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing request: " + e.getMessage());
+        }
     }
 
     @PostMapping("/submit-request")

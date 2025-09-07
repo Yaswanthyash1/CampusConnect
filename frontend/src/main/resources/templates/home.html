@@ -184,12 +184,15 @@
                     <a class="btn" href="/request">Request</a>
                   </div>`;
             } else if (userType === 'clubHead') {
+                // For club heads, store club name for later use
+                let clubName = localStorage.getItem('club') || userIdentifier;
+                
                 roleActionsDiv.innerHTML = `
                   <div class="role-card">
                     <h3>Club Head Panel</h3>
-                    <a class="btn" href="/club/${userIdentifier}">Manage Members</a>
-                    <a class="btn" href="/club/${userIdentifier}/requests">View Requests</a>
-                    <a class="btn" href="/club/${userIdentifier}/processed-requests">Processed Requests</a>
+                    <a class="btn" href="/club/${clubName}">Manage Members</a>
+                    <a class="btn" href="/club/${clubName}/requests">View Requests</a>
+                    <a class="btn" href="/club/${clubName}/processed-requests">Processed Requests</a>
                     <a class="btn" href="/events-dashboard">Events</a>
                     <a class="btn" href="/projects-dashboard">Projects</a>
                     <a class="btn" href="/pending-tasks?userIdentifier=${userIdentifier}">Pending Tasks</a>

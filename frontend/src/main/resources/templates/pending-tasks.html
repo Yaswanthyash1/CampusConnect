@@ -178,7 +178,7 @@
             line-height: 1.5;
             margin-bottom: 15px;
         }
-        .complete-btn, .view-details-btn {
+        .complete-btn, .view-details-btn, .reject-btn {
             color: white;
             border: none;
             padding: 8px 16px;
@@ -191,16 +191,20 @@
             align-items: center;
             gap: 6px;
         }
-        .complete-btn:hover, .view-details-btn:hover {
+        .complete-btn:hover, .view-details-btn:hover, .reject-btn:hover {
             transform: scale(1.05);
             filter: brightness(1.1);
         }
-        .complete-btn:active, .view-details-btn:active {
+        .complete-btn:active, .view-details-btn:active, .reject-btn:active {
             transform: scale(0.98);
         }
         .complete-btn {
             background: linear-gradient(145deg, #28a745, #20c997);
             box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        .reject-btn {
+            background: linear-gradient(145deg, #dc3545, #c82333);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
         }
         .view-details-btn {
             background: linear-gradient(145deg, #17a2b8, #20c997);
@@ -327,6 +331,10 @@
             🎉 Events
             <span class="tab-count" th:text="${#lists.size(events)}">0</span>
         </button>
+        <button class="tab-btn" id="enrollments-tab" onclick="showTab('enrollments')">
+            👥 Club Enrollments
+            <span class="tab-count" th:text="${#lists.size(enrollments)}">0</span>
+        </button>
     </div>
 
     <!-- Ideas Tab Content -->
@@ -433,6 +441,33 @@
             <div class="no-tasks-icon">🎉</div>
             <div>No pending events at the moment.</div>
             <small>Event requests will appear here once accepted.</small>
+        </div>
+    </div>
+
+    <!-- Enrollments Tab Content -->
+    <div class="tab-content" id="enrollments-content">
+        <div class="section-header">
+            <span class="section-icon">👥</span>
+            <span>Club Enrollment Requests</span>
+        </div>
+        <ul class="task-list" th:if="${!#lists.isEmpty(enrollments)}">
+            <li th:each="request : ${enrollments}">
+                <p><strong>Member SRN:</strong> <span class="member-id" th:text="${request.memberId}"></span></p>
+                <p><strong>Description:</strong> <span class="description" th:text="${request.description}"></span></p>
+                <p><strong>Submitted:</strong> <span th:text="${request.timestamp}"></span></p>
+                <div class="request-actions">
+                    <button class="complete-btn" th:onclick="'completeEnrollment(' + ${request.id} + ')'">✔️ Accept</button>
+                    <button class="reject-btn" th:onclick="'rejectEnrollment(' + ${request.id} + ')'">❌ Reject</button>
+                    <button class="view-details-btn"
+                            th:onclick="'viewRequestDetails(' + ${request.id} + ')'">🔍 View Details
+                    </button>
+                </div>
+            </li>
+        </ul>
+        <div class="no-tasks" th:if="${#lists.isEmpty(enrollments)}">
+            <div class="no-tasks-icon">👥</div>
+            <div>No pending club enrollment requests at the moment.</div>
+            <small>Club enrollment requests will appear here once submitted.</small>
         </div>
     </div>
 
@@ -559,6 +594,54 @@
             sessionStorage.setItem('completingRequestId', requestId);
             sessionStorage.setItem('completingRequestType', 'event');
             window.location.href = '/add-event?fromRequest=' + requestId;
+        }
+    }
+
+    function completeEnrollment(requestId) {
+        if (confirm('Are you sure you want to approve this club enrollment request?')) {
+            fetch('/handle-enrollment-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'requestId=' + encodeURIComponent(requestId) + '&action=accept'
+            })
+            .then(response => response.text().then(text => {
+                if (response.ok) {
+                    alert('Enrollment request approved successfully.');
+                    location.reload();
+                } else {
+                    alert('Error approving enrollment request: ' + text);
+                }
+            }))
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error approving enrollment request. Please try again.');
+            });
+        }
+    }
+
+    function rejectEnrollment(requestId) {
+        if (confirm('Are you sure you want to reject this club enrollment request?')) {
+            fetch('/handle-enrollment-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'requestId=' + encodeURIComponent(requestId) + '&action=reject'
+            })
+            .then(response => response.text().then(text => {
+                if (response.ok) {
+                    alert('Enrollment request rejected.');
+                    location.reload();
+                } else {
+                    alert('Error rejecting enrollment request: ' + text);
+                }
+            }))
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error rejecting enrollment request. Please try again.');
+            });
         }
     }
 

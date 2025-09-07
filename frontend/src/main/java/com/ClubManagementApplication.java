@@ -9,6 +9,6 @@ public class ClubManagementApplication {
     public static void main(String[] args) {
         SpringApplication.run(ClubManagementApplication.class, args);
 
-        System.out.println("Hello World!");
+        System.out.println("\u001B[32mHello World!\u001B[0m");
     }
 }

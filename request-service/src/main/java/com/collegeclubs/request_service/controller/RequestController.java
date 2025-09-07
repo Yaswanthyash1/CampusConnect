@@ -10,14 +10,20 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import java.io.IOException;
@@ -41,21 +47,89 @@ public class RequestController {
     private JdbcTemplate jdbcTemplate;
 
     @GetMapping("/club-requests")
-    public String viewRequests(Model model) {
-        List<Request> requests = requestService.getAllRequests();
-        model.addAttribute("requests", requests);
-        return "club-requests";
+    @ResponseBody
+    public ResponseEntity<List<Request>> viewRequests() {
+        try {
+            List<Request> requests = requestService.getAllRequests();
+            System.out.println("DEBUG viewRequests: Returning " + requests.size() + " requests");
+
+            // Debug output of all requests
+            for (Request req : requests) {
+                System.out.println("DEBUG request: id=" + req.getId() +
+                        ", memberId=" + req.getMemberId() +
+                        ", type=" + req.getType() +
+                        ", clubName=" + req.getClubName() +
+                        ", status=" + req.getStatus());
+            }
+
+            return ResponseEntity.ok(requests);
+        } catch (Exception e) {
+            System.err.println("Error fetching club requests: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
     }
 
     @GetMapping("/my-requests")
-    public String myRequests(@RequestParam("memberId") String memberId, Model model) {
-        // Return requests submitted by this member (SRN). Shows status but no action
-        // buttons.
-        List<Request> requests = requestService.getRequestsByMemberId(memberId);
-        model.addAttribute("requests", requests);
-        model.addAttribute("isClubHead", false);
-        model.addAttribute("clubName", "");
-        return "club-requests";
+    @ResponseBody
+    public ResponseEntity<List<Request>> myRequests(@RequestParam("memberId") String memberId) {
+        try {
+            List<Request> requests = requestService.getRequestsByMemberId(memberId);
+            return ResponseEntity.ok(requests);
+        } catch (Exception e) {
+            System.err.println("Error fetching member requests: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
+
+    @PostMapping("/update-request-status")
+    @ResponseBody
+    public ResponseEntity<String> updateRequestStatus(@RequestBody Map<String, Object> requestData) {
+        try {
+            Long requestId = Long.valueOf(requestData.get("requestId").toString());
+            String action = (String) requestData.get("action");
+            String clubName = (String) requestData.get("clubName");
+
+            String status;
+            if ("accept".equals(action)) {
+                status = "accepted";
+            } else if ("reject".equals(action)) {
+                status = "rejected";
+            } else {
+                return ResponseEntity.badRequest().body("Invalid action");
+            }
+
+            String sql = "UPDATE request SET status = ? WHERE id = ?";
+            int updated = jdbcTemplate.update(sql, status, requestId);
+
+            if (updated > 0) {
+                System.out.println("Request " + requestId + " status updated to: " + status);
+                return ResponseEntity.ok("Request status updated successfully");
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            System.err.println("Error updating request status: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating request status");
+        }
+    }
+
+    @GetMapping("/request/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getRequestById(@PathVariable Long id) {
+        try {
+            String sql = "SELECT * FROM request WHERE id = ?";
+            Map<String, Object> request = jdbcTemplate.queryForMap(sql, id);
+
+            // Convert member_id to memberId for backward compatibility
+            if (request.containsKey("member_id")) {
+                request.put("memberId", request.get("member_id"));
+            }
+
+            return ResponseEntity.ok(request);
+        } catch (Exception e) {
+            System.err.println("Error fetching request: " + e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/request/file/{id}")
@@ -95,15 +169,26 @@ public class RequestController {
             String clubName = (String) requestData.get("clubName");
             String status = (String) requestData.get("status");
 
+            System.out.println("DEBUG createRequest: srn=" + srn +
+                    ", type=" + type +
+                    ", clubName=" + clubName +
+                    ", status=" + status);
+
             if (srn == null || type == null || description == null) {
                 return ResponseEntity.badRequest().body("Missing required fields");
             }
 
-            // Create the request in database
-            String sql = "INSERT INTO request (member_id, type, description, status, timestamp, file_path) VALUES (?, ?, ?, ?, NOW(), NULL)";
-            jdbcTemplate.update(sql, srn, type, description, status != null ? status : "pending");
+            // Create the request in database with pending status
+            String sql = "INSERT INTO request (member_id, type, description, status, timestamp, file_path, clubName) VALUES (?, ?, ?, ?, NOW(), NULL, ?)";
+            String requestStatus = status != null ? status : "pending";
 
-            return ResponseEntity.ok("Request submitted successfully");
+            System.out.println("DEBUG SQL: " + sql +
+                    " with values: [" + srn + ", " + type + ", " + description +
+                    ", " + requestStatus + ", " + clubName + "]");
+
+            jdbcTemplate.update(sql, srn, type, description, requestStatus, clubName);
+
+            return ResponseEntity.ok("Request submitted successfully and sent to club head for approval");
         } catch (Exception e) {
             System.err.println("Error creating request: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating request");
