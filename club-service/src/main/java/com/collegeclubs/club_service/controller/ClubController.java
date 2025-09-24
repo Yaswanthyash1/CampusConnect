@@ -110,29 +110,26 @@ public class ClubController {
         try {
             org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
             String requestServiceUrl = "http://localhost:8083/club-requests";
-            org.springframework.http.ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
-                    requestServiceUrl,
-                    org.springframework.http.HttpMethod.GET, null,
-                    new org.springframework.core.ParameterizedTypeReference<List<Map<String, Object>>>() {
-                    });
+
+            org.springframework.http.ResponseEntity<List<Map<String, Object>>> response =
+                    restTemplate.exchange(
+                            requestServiceUrl,
+                            org.springframework.http.HttpMethod.GET,
+                            null,
+                            new org.springframework.core.ParameterizedTypeReference<List<Map<String, Object>>>() {
+                            });
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 List<Map<String, Object>> allRequests = response.getBody();
                 for (Map<String, Object> request : allRequests) {
                     String requestClub = (String) request.get("clubName");
                     String status = (String) request.get("status");
-                    Object isCompletedObj = request.get("is_completed");
-                    int isCompleted = 0;
-                    if (isCompletedObj instanceof Number) {
-                        isCompleted = ((Number) isCompletedObj).intValue();
-                    } else if (isCompletedObj instanceof String) {
-                        try {
-                            isCompleted = Integer.parseInt((String) isCompletedObj);
-                        } catch (NumberFormatException ignored) {}
-                    }
-                    if (requestClub != null && requestClub.trim().equalsIgnoreCase(clubName.trim())) {
-                        if ("accepted".equalsIgnoreCase(status) && isCompleted == 0) {
-                            pendingRequests.add(request);
-                        }
+
+                    if (requestClub != null
+                            && requestClub.trim().equalsIgnoreCase(clubName.trim())
+                            && status != null
+                            && status.trim().equalsIgnoreCase("pending")) {
+                        pendingRequests.add(request);
                     }
                 }
             }
@@ -141,6 +138,7 @@ public class ClubController {
         }
         return pendingRequests;
     }
+
 
     // --- Club requests (update) ---
     @PostMapping("/{clubName}/requests")
