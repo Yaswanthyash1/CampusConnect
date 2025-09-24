@@ -304,6 +304,29 @@ public class RequestController {
                 memberId = "unknown";
             }
 
+            // get club name for the member from user service
+            String clubName = "Unknown Club";
+            try {
+                String userServiceUrl = "http://localhost:8081";
+                String fallbackUrl = userServiceUrl + "/user-service/api/user/details/srn?srn=" + memberId;
+                System.out.println("Fetching user details from: " + fallbackUrl);
+                ResponseEntity<Map> fallbackResponse = restTemplate.getForEntity(fallbackUrl, Map.class);
+
+                if (fallbackResponse.getStatusCode().is2xxSuccessful() && fallbackResponse.getBody() != null) {
+                    Map<String, Object> userData = fallbackResponse.getBody();
+                    System.out.println("User data received from fallback: " + userData);
+
+                    if (userData.get("club") != null && !userData.get("club").toString().trim().isEmpty()) {
+                        clubName = userData.get("club").toString();
+                        System.out.println("Club name found from fallback: " + clubName);
+                    } else {
+                        System.out.println("Club name not found in fallback user data");
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error calling user service for memberId={}: {}", memberId, e.getMessage());
+            }
+
             // Save request in DB
             Request req = new Request();
             req.setType(type);
@@ -311,6 +334,7 @@ public class RequestController {
             req.setMemberId(memberId);
             req.setFilePath(filePath.toString());
             req.setStatus("pending");
+            req.setClubName(clubName);
 
             Request saved = requestService.saveRequest(req);
             if (saved != null && saved.getId() != null) {
