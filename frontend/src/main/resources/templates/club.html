@@ -193,22 +193,124 @@
             <button class="nav-btn" onclick="showContent('events')">Events</button>
         </div>
 
-        <!-- Members -->
+        <!-- MEMBERS section inside your container -->
         <div class="content" id="members-content" style="display:none;">
-            <h3 th:text="'Members List:'"></h3>
-            <ul>
-                <li th:each="member : ${clubMembers}">
-                    <a class="member-btn" th:href="@{'/member/' + ${member['SRN']}}" th:text="${member['SRN']}"></a>
-                </li>
-            </ul>
-            <div class="modal" id="memberModal" style="display:none;">
-                <div class="modal-content">
+            <h3>Club Members</h3>
+
+            <!-- Members count -->
+            <div class="members-stats" style="margin-bottom: 20px;">
+                <p style="background: var(--glass); padding: 10px; border-radius: 8px; text-align: center;">
+                    <strong>Total Members: </strong>
+                    <span th:text="${#lists.size(members)}">0</span>
+                </p>
+            </div>
+
+            <!-- Empty state -->
+            <div th:if="${members == null || #lists.isEmpty(members)}" style="text-align: center; padding: 40px;">
+                <p style="background: var(--glass); padding: 20px; border-radius: 8px;">
+                    <strong>No members found for this club.</strong><br>
+                    <small>Members will appear here once they join through enrollment requests.</small>
+                </p>
+            </div>
+
+            <!-- Members grid -->
+            <div class="members-grid" th:if="${members != null && !#lists.isEmpty(members)}"
+                 style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                <div class="member-card" th:each="member : ${members}"
+                     style="background: var(--glass); padding: 20px; border-radius: 12px; backdrop-filter: blur(8px); transition: transform 0.2s;"
+                     th:attr="
+                 data-name=${member.name},
+                 data-srn=${member.srn},
+                 data-email=${member.email},
+                 data-dept=${member.dept},
+                 data-sem=${member.sem},
+                 data-domain=${member.domain},
+                 data-phone=${member.phoneno},
+                 data-gender=${member.gender},
+                 data-role=${member.role}">
+
+                    <div class="member-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
+                        <h4 th:text="${member.name}" style="margin: 0; color: var(--accent2);">Member Name</h4>
+                        <p style="margin: 5px 0; font-size: 14px; opacity: 0.8;" th:text="'SRN: ' + ${member.srn}">SRN</p>
+                    </div>
+
+                    <div class="member-actions" style="text-align:center;">
+                        <button class="member-btn" onclick="showMemberDetails(this)">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal for member details -->
+            <div class="modal" id="memberModal">
+                <div class="modal-content" style="background: var(--glass); color: var(--text); box-shadow: var(--shadow); border: none;">
                     <span class="close" onclick="closeMemberModal()">&times;</span>
-                    <h2>Member Details</h2>
+                    <h2 style="color: var(--accent2);">Member Details</h2>
                     <div id="memberDetails"></div>
                 </div>
             </div>
         </div>
+
+        <script>
+            function showContent(contentId) {
+                // Hide all content sections
+                document.querySelectorAll('.content').forEach(section => {
+                    section.style.display = 'none';
+                });
+
+                // Show the selected content section
+                const contentSection = document.getElementById(`${contentId}-content`);
+                if (contentSection) {
+                    contentSection.style.display = 'block';
+                }
+            }
+
+            function showMemberDetails(button) {
+                const memberCard = button.closest('.member-card');
+                const memberDetails = {
+                    name: memberCard.getAttribute('data-name'),
+                    srn: memberCard.getAttribute('data-srn'),
+                    email: memberCard.getAttribute('data-email'),
+                    dept: memberCard.getAttribute('data-dept'),
+                    sem: memberCard.getAttribute('data-sem'),
+                    domain: memberCard.getAttribute('data-domain'),
+                    phone: memberCard.getAttribute('data-phone'),
+                    gender: memberCard.getAttribute('data-gender'),
+                    role: memberCard.getAttribute('data-role')
+                };
+
+                const modal = document.getElementById('memberModal');
+                const detailsContainer = document.getElementById('memberDetails');
+                detailsContainer.innerHTML = `
+                    <p><strong>Name:</strong> ${memberDetails.name}</p>
+                    <p><strong>SRN:</strong> ${memberDetails.srn}</p>
+                    <p><strong>Email:</strong> ${memberDetails.email}</p>
+                    <p><strong>Department:</strong> ${memberDetails.dept}</p>
+                    <p><strong>Semester:</strong> ${memberDetails.sem}</p>
+                    <p><strong>Domain:</strong> ${memberDetails.domain}</p>
+                    <p><strong>Phone:</strong> ${memberDetails.phone}</p>
+                    <p><strong>Gender:</strong> ${memberDetails.gender}</p>
+                    <p><strong>Role:</strong> ${memberDetails.role}</p>
+                `;
+
+                modal.style.display = 'block';
+            }
+
+            function closeMemberModal() {
+                const modal = document.getElementById('memberModal');
+                modal.style.display = 'none';
+            }
+
+            // Close modal when clicking outside of it
+            window.onclick = function(event) {
+                const modal = document.getElementById('memberModal');
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            }
+        </script>
+
 
         <!-- Events -->
         <div class="content" id="events-content" style="display:none;">
@@ -239,17 +341,54 @@
                 <p>There are currently no upcoming events.</p>
             </div>
         </div>
+
+        <!-- Pending Requests Section -->
+        <div class="content" id="pending-requests-content" th:if="${pendingRequests != null}">
+            <h3>Pending Requests</h3>
+            <div th:if="${#lists.isEmpty(pendingRequests)}" class="empty-state">
+                <p>No pending requests for this club.</p>
+            </div>
+            <div th:if="${!#lists.isEmpty(pendingRequests)}">
+                <table style="width:100%; background:var(--glass); border-radius:10px; box-shadow:var(--shadow); color:var(--text);">
+                    <thead>
+                        <tr style="background:rgba(255,255,255,0.08);">
+                            <th>Requester</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="req : ${pendingRequests}">
+                            <td th:text="${req['requesterName']} ?: '-'">Requester</td>
+                            <td th:text="${req['type']} ?: '-'">Type</td>
+                            <td th:text="${#dates.format(req['createdAt'], 'dd MMM yyyy HH:mm')} ?: '-'">Date</td>
+                            <td>
+                                <form th:action="@{'/club-service/api/club/' + ${club.clubName} + '/requests'}" method="post" style="display:inline;">
+                                    <input type="hidden" name="requestId" th:value="${req['id']}" />
+                                    <button class="nav-btn" name="action" value="accept" type="submit">Approve</button>
+                                    <button class="nav-btn" name="action" value="reject" type="submit">Reject</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    function showContent(option) {
-        document.getElementById("members-content").style.display = "none";
-        document.getElementById("events-content").style.display = "none";
-        if (option === "members") {
-            document.getElementById("members-content").style.display = "block";
-        } else if (option === "events") {
-            document.getElementById("events-content").style.display = "block";
+    function showContent(contentId) {
+        // Hide all content sections
+        document.querySelectorAll('.content').forEach(section => {
+            section.style.display = 'none';
+        });
+
+        // Show the selected content section
+        const contentSection = document.getElementById(`${contentId}-content`);
+        if (contentSection) {
+            contentSection.style.display = 'block';
         }
     }
 
@@ -259,25 +398,15 @@
             window.location.href = '/login';
         });
     }
-
-    // Prepare member data for modal
-    const clubMembers = /*[[${clubMembers}]]*/ [];
-    function showMemberDetails(index) {
-        const member = clubMembers[index];
-        if (!member) return;
-        let html = '<ul>';
-        for (const key in member) {
-            if (member.hasOwnProperty(key)) {
-                html += `<li><strong>${key}:</strong> ${member[key]}</li>`;
-            }
-        }
-        html += '</ul>';
-        document.getElementById('memberDetails').innerHTML = html;
-        document.getElementById('memberModal').style.display = 'block';
-    }
-    function closeMemberModal() {
-        document.getElementById('memberModal').style.display = 'none';
-    }
 </script>
+
+<script th:inline="javascript">
+        /* Ensure members section is displayed on page load */
+        window.addEventListener('DOMContentLoaded', function() {
+            if (window.location.pathname.endsWith('/club-head/members')) {
+                showContent('members');
+            }
+        });
+    </script>
 </body>
 </html>

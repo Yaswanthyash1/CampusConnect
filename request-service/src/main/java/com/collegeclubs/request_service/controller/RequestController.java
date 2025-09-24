@@ -381,4 +381,89 @@ public class RequestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
+
+    @GetMapping("/member/{memberId}/pending-tasks")
+    @ResponseBody
+    public ResponseEntity<List<Request>> getPendingTasksForMember(@PathVariable String memberId) {
+        try {
+            logger.info("Fetching pending tasks for memberId: {}", memberId);
+            // Query for pending OR accepted and not completed requests for the member
+            String sql = "SELECT * FROM request WHERE member_id = ? AND (status = 'pending' OR (status = 'accepted' AND (is_completed = 0 OR is_completed IS NULL)))";
+            logger.info("SQL Query: {} | Params: [{}]", sql, memberId);
+            List<Request> pendingTasks = jdbcTemplate.query(
+                sql,
+                new Object[]{memberId},
+                (rs, rowNum) -> {
+                    Request req = new Request();
+                    req.setId(rs.getLong("id"));
+                    req.setMemberId(rs.getString("member_id"));
+                    req.setType(rs.getString("type"));
+                    req.setDescription(rs.getString("description"));
+                    req.setStatus(rs.getString("status"));
+                    req.setTimestamp(rs.getTimestamp("timestamp"));
+                    req.setFilePath(rs.getString("file_path"));
+                    req.setClubName(rs.getString("clubName"));
+                    Object completedObj = rs.getObject("is_completed");
+                    boolean completed = false;
+                    if (completedObj instanceof Boolean) {
+                        completed = (Boolean) completedObj;
+                    } else if (completedObj instanceof Number) {
+                        completed = ((Number) completedObj).intValue() == 1;
+                    } else if (completedObj != null) {
+                        completed = completedObj.toString().equals("1") || completedObj.toString().equalsIgnoreCase("true");
+                    }
+                    req.setCompleted(completed);
+                    return req;
+                }
+            );
+            logger.info("Pending tasks found: {}", pendingTasks.size());
+            return ResponseEntity.ok(pendingTasks);
+        } catch (Exception e) {
+            logger.error("Error fetching pending tasks for member {}: {}", memberId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
+
+    @GetMapping("/club/{clubName}/pending-tasks")
+    @ResponseBody
+    public ResponseEntity<List<Request>> getPendingTasksForClub(@PathVariable String clubName) {
+        try {
+            logger.info("Fetching pending tasks for club: {}", clubName);
+            String sql = "SELECT * FROM request WHERE clubName = ? AND (status = 'pending' OR (status = 'accepted' AND (is_completed = 0 OR is_completed IS NULL)))";
+            List<Request> pendingTasks = jdbcTemplate.query(
+                sql,
+                new Object[]{clubName},
+                (rs, rowNum) -> {
+                    Request req = new Request();
+                    req.setId(rs.getLong("id"));
+                    req.setMemberId(rs.getString("member_id"));
+                    req.setType(rs.getString("type"));
+                    req.setDescription(rs.getString("description"));
+                    req.setStatus(rs.getString("status"));
+                    req.setTimestamp(rs.getTimestamp("timestamp"));
+                    req.setFilePath(rs.getString("file_path"));
+                    req.setClubName(rs.getString("clubName"));
+                    Object completedObj = rs.getObject("is_completed");
+                    boolean completed = false;
+                    if (completedObj instanceof Boolean) {
+                        completed = (Boolean) completedObj;
+                    } else if (completedObj instanceof Number) {
+                        completed = ((Number) completedObj).intValue() == 1;
+                    } else if (completedObj != null) {
+                        completed = completedObj.toString().equals("1") || completedObj.toString().equalsIgnoreCase("true");
+                    }
+                    req.setCompleted(completed);
+                    return req;
+                }
+            );
+            logger.info("Pending tasks found for club {}: {}", clubName, pendingTasks.size());
+            for (Request req : pendingTasks) {
+                logger.info("DEBUG club pending: id={}, type={}, clubName={}, status={}, isCompleted={}", req.getId(), req.getType(), req.getClubName(), req.getStatus(), req.isCompleted());
+            }
+            return ResponseEntity.ok(pendingTasks);
+        } catch (Exception e) {
+            logger.error("Error fetching pending tasks for club {}: {}", clubName, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
 }

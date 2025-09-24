@@ -22,7 +22,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -432,20 +434,59 @@ public class MainController {
 
     @GetMapping("/club/{clubName}")
     public String showClubPage(@PathVariable String clubName, Model model) {
+        System.out.println("DEBUG: Frontend showClubPage called for club: " + clubName);
+
         // Fetch club details from unified club API
         try {
             String clubDetailsUrl = "http://localhost:8082/club-service/api/club/" + clubName;
             ResponseEntity<Map> response = restTemplate.getForEntity(clubDetailsUrl, Map.class);
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 model.addAttribute("club", response.getBody());
+                System.out.println("DEBUG: Club details fetched successfully");
             } else {
                 model.addAttribute("club", java.util.Collections.emptyMap());
+                System.out.println("DEBUG: Failed to fetch club details");
             }
         } catch (Exception e) {
             System.err.println("Error fetching club details: " + e.getMessage());
             model.addAttribute("club", java.util.Collections.emptyMap());
         }
+
+        // Fetch club members from user-service
+        java.util.List<java.util.Map<String, Object>> members = new java.util.ArrayList<>();
+        try {
+            String membersUrl = "http://localhost:8081/user-service/api/user/club-members?clubName=" + clubName;
+            System.out.println("DEBUG: Calling user-service for members: " + membersUrl);
+
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> membersResponse = restTemplate.exchange(
+                membersUrl,
+                org.springframework.http.HttpMethod.GET,
+                null,
+                new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {}
+            );
+
+            if (membersResponse.getStatusCode().is2xxSuccessful() && membersResponse.getBody() != null) {
+                members = membersResponse.getBody();
+                System.out.println("DEBUG: Successfully fetched " + members.size() + " members for club: " + clubName);
+
+                // Debug each member
+                for (java.util.Map<String, Object> member : members) {
+                    System.out.println("DEBUG: Member - Name: " + member.get("name") +
+                                     ", SRN: " + member.get("srn") +
+                                     ", Club: " + member.get("club"));
+                }
+            } else {
+                System.err.println("DEBUG: Failed to fetch members. Status: " + membersResponse.getStatusCode());
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to fetch club members: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        model.addAttribute("members", members);
         model.addAttribute("clubName", clubName);
+        System.out.println("DEBUG: Returning club view with " + members.size() + " members");
+
         return "club";
     }
 
@@ -590,15 +631,17 @@ public class MainController {
                     String requestClub = (String) request.get("clubName");
                     String status = (String) request.get("status");
                     String type = (String) request.get("type");
+                    String is_completed = String.valueOf(request.get("is_completed"));
 
-                    System.out.println("DEBUG Request: type=" + type + ", club=" + requestClub + ", status=" + status);
+                    System.out.println("DEBUG Request: type=" + type + ", club=" + requestClub + ", status=" + status + ", is_completed=" + is_completed);
 
-                    // Only show requests for this club head's club and with pending status
                     boolean clubMatch = (clubName != null && requestClub != null &&
                             requestClub.trim().equalsIgnoreCase(clubName.trim()));
                     boolean isPending = (status != null && status.trim().equalsIgnoreCase("pending"));
+                    boolean isAcceptedAndNotCompleted = (status != null && status.trim().equalsIgnoreCase("accepted") &&
+                        (is_completed.equals("0") || is_completed.equalsIgnoreCase("false")));
 
-                    if (clubMatch && isPending) {
+                    if (clubMatch && (isPending || isAcceptedAndNotCompleted)) {
                         if (type != null) {
                             if (type.equalsIgnoreCase("idea")) {
                                 ideas.add(request);
@@ -971,4 +1014,94 @@ public class MainController {
             return "redirect:/request";
         }
     }
+
+    @GetMapping("/club-head/members")
+    public String showClubMembers(HttpSession session, Model model) {
+        String clubName = (String) session.getAttribute("userIdentifier");
+        System.out.println("DEBUG: Frontend showClubMembers called for club: '" + clubName + "'");
+
+        // Fetch club details from club-service
+        try {
+            String clubDetailsUrl = "http://localhost:8082/club-service/api/club/" + clubName;
+            ResponseEntity<Map> response = restTemplate.getForEntity(clubDetailsUrl, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                model.addAttribute("club", response.getBody());
+                System.out.println("DEBUG: Club details fetched successfully");
+            } else {
+                model.addAttribute("club", java.util.Collections.emptyMap());
+                System.out.println("DEBUG: Failed to fetch club details");
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching club details: " + e.getMessage());
+            model.addAttribute("club", java.util.Collections.emptyMap());
+        }
+
+        // Fetch club members from user-service
+        java.util.List<java.util.Map<String, Object>> members = new java.util.ArrayList<>();
+        try {
+            String membersUrl = "http://localhost:8081/user-service/api/user/club-members?clubName=" + clubName;
+            System.out.println("DEBUG: Calling user-service for members: " + membersUrl);
+
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> membersResponse = restTemplate.exchange(
+                membersUrl,
+                org.springframework.http.HttpMethod.GET,
+                null,
+                new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {}
+            );
+
+            if (membersResponse.getStatusCode().is2xxSuccessful() && membersResponse.getBody() != null) {
+                members = membersResponse.getBody();
+                System.out.println("DEBUG: Successfully fetched " + members.size() + " members for club: " + clubName);
+            } else {
+                System.err.println("DEBUG: Failed to fetch members. Status: " + membersResponse.getStatusCode());
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to fetch club members: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        model.addAttribute("members", members);
+        model.addAttribute("clubName", clubName);
+        System.out.println("DEBUG: Returning club view with " + members.size() + " members");
+        return "club";
+    }
+
+    @GetMapping("/club")
+    public String showClubPage(HttpSession session, Model model) {
+        addClubNameIfClubHead(session, model);
+        String clubName = (String) model.getAttribute("clubName");
+        List<Map<String, Object>> members = Collections.emptyList();
+        if (clubName != null && !clubName.trim().isEmpty()) {
+            try {
+                String url = userServiceUrl + "/user-service/api/user/club-members?clubName=" + clubName;
+                System.out.println("DEBUG: Fetching club members from: " + url);
+                ResponseEntity<List> response = restTemplate.getForEntity(url, List.class);
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    members = response.getBody();
+                }
+            } catch (Exception e) {
+                System.err.println("Error fetching club members: " + e.getMessage());
+            }
+        }
+        model.addAttribute("members", members);
+        return "club";
+    }
+
+    @GetMapping("/club/{clubName}/manage-members")
+    public String showManageMembers(@PathVariable String clubName, Model model) {
+        try {
+            String clubServiceUrl = "http://localhost:8082/club-service/api/club/club/" + clubName + "/manage-members";
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> response = restTemplate.getForEntity(clubServiceUrl, String.class);
+            // The club-service returns a rendered HTML page, so we just forward it
+            model.addAttribute("clubName", clubName);
+            // If you want to parse members from JSON, you can change club-service to return JSON and parse here
+            // For now, just render the template
+            return "manage-members";
+        } catch (Exception e) {
+            model.addAttribute("error", "Failed to fetch members: " + e.getMessage());
+            return "manage-members";
+        }
+    }
+
 }

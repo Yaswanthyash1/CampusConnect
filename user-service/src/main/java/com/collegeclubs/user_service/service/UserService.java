@@ -238,8 +238,10 @@ public class UserService {
 
     public java.util.List<User> findUsersByClub(String clubName) {
         String sql = "SELECT * FROM user WHERE club = ?";
+        System.out.println("DEBUG: Finding users by club: '" + clubName + "'");
+        System.out.println("DEBUG: SQL Query: " + sql);
         try {
-            return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            java.util.List<User> users = jdbcTemplate.query(sql, (rs, rowNum) -> {
                 User user = new User();
                 user.setId(rs.getLong("id"));
                 user.setSrn(rs.getString("srn"));
@@ -254,10 +256,14 @@ public class UserService {
                 user.setPhoneno(rs.getString("phoneno"));
                 user.setGender(rs.getString("gender"));
                 user.setClub(rs.getString("club"));
+                System.out.println("DEBUG: Found user: " + user.getName() + " (SRN: " + user.getSrn() + ", Club: " + user.getClub() + ")");
                 return user;
             }, clubName);
+            System.out.println("DEBUG: Total users found for club '" + clubName + "': " + users.size());
+            return users;
         } catch (Exception e) {
             System.err.println("Error finding users by club: " + e.getMessage());
+            e.printStackTrace();
             return java.util.Collections.emptyList();
         }
     }

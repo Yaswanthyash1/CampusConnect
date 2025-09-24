@@ -18,6 +18,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/user-service/api/**").permitAll()
+                .requestMatchers("/user-service/**").permitAll() // Allow all user-service endpoints
+                .requestMatchers("/club-members").permitAll() // Allow direct club-members endpoint
                 .anyRequest().authenticated()
             );
         return http.build();

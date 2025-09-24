@@ -225,11 +225,15 @@
    }
    function hideForm() {
        var options = document.getElementById('optionsContainer');
-       if (options) options.style.display = 'block';
+       if (options) options.style.display = 'grid';
        var formContainer = document.getElementById('requestFormContainer');
        formContainer.style.display = 'none';
        document.getElementById('requestForm').reset();
    }
+   window.addEventListener('pageshow', function(event) {
+          var options = document.getElementById('optionsContainer');
+           if (options) options.style.display = 'grid';
+   });
 </script>
 </body>
 </html>

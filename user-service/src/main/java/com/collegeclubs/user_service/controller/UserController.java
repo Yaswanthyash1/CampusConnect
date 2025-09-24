@@ -57,7 +57,10 @@ public class UserController {
 
     @GetMapping("/club-members")
     public java.util.List<User> getUsersByClub(@RequestParam String clubName) {
-        return userService.findUsersByClub(clubName);
+        System.out.println("DEBUG: UserController received request for club members: '" + clubName + "'");
+        java.util.List<User> users = userService.findUsersByClub(clubName);
+        System.out.println("DEBUG: UserController returning " + users.size() + " users for club: '" + clubName + "'");
+        return users;
     }
 
     @PostMapping("/update-club")

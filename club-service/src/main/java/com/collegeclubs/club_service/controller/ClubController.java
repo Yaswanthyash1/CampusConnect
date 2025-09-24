@@ -94,9 +94,12 @@ public class ClubController {
         }
         List<Map<String, Object>> clubMembers = getClubMembersByName(clubName);
         List<Map<String, Object>> clubEvents = getClubEvents(clubName);
+        // Fetch pending requests for the club
+        List<Map<String, Object>> pendingRequests = getClubRequests(clubName);
         model.addAttribute("club", club);
         model.addAttribute("clubMembers", clubMembers);
         model.addAttribute("clubEvents", clubEvents);
+        model.addAttribute("pendingRequests", pendingRequests);
         return "club";
     }
 
@@ -117,13 +120,24 @@ public class ClubController {
                 for (Map<String, Object> request : allRequests) {
                     String requestClub = (String) request.get("clubName");
                     String status = (String) request.get("status");
-                    if (requestClub != null && requestClub.trim().equalsIgnoreCase(clubName.trim()) &&
-                            status != null && status.trim().equalsIgnoreCase("pending")) {
-                        pendingRequests.add(request);
+                    Object isCompletedObj = request.get("is_completed");
+                    int isCompleted = 0;
+                    if (isCompletedObj instanceof Number) {
+                        isCompleted = ((Number) isCompletedObj).intValue();
+                    } else if (isCompletedObj instanceof String) {
+                        try {
+                            isCompleted = Integer.parseInt((String) isCompletedObj);
+                        } catch (NumberFormatException ignored) {}
+                    }
+                    if (requestClub != null && requestClub.trim().equalsIgnoreCase(clubName.trim())) {
+                        if ("accepted".equalsIgnoreCase(status) && isCompleted == 0) {
+                            pendingRequests.add(request);
+                        }
                     }
                 }
             }
         } catch (Exception e) {
+            System.err.println("Error fetching club requests: " + e.getMessage());
         }
         return pendingRequests;
     }
@@ -302,4 +316,49 @@ public class ClubController {
         return "add-event";
     }
 
+    @GetMapping("/club/{clubName}/manage-members")
+     public String manageMembers(@PathVariable String clubName, Model model) {
+         System.out.println("DEBUG: ClubController manageMembers called for club: " + clubName);
+
+         List<Map<String, Object>> members = new ArrayList<>();
+
+         try {
+             // Call user-service to get members for this club
+             org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+             String userServiceUrl = "http://localhost:8081/user-service/api/user/club-members?clubName=" + clubName;
+
+             System.out.println("DEBUG: Calling user-service URL: " + userServiceUrl);
+
+             org.springframework.http.ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                 userServiceUrl,
+                 org.springframework.http.HttpMethod.GET,
+                 null,
+                 new org.springframework.core.ParameterizedTypeReference<List<Map<String, Object>>>() {}
+             );
+
+             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                 members = response.getBody();
+                 System.out.println("DEBUG: Successfully fetched " + members.size() + " members for club: " + clubName);
+
+                 // Debug each member
+                 for (Map<String, Object> member : members) {
+                     System.out.println("DEBUG: Member - Name: " + member.get("name") +
+                                      ", SRN: " + member.get("srn") +
+                                      ", Club: " + member.get("club"));
+                 }
+             } else {
+                 System.err.println("DEBUG: Failed to fetch members. Status: " + response.getStatusCode());
+             }
+
+         } catch (Exception e) {
+             System.err.println("ERROR: Failed to fetch club members: " + e.getMessage());
+             e.printStackTrace();
+         }
+
+         model.addAttribute("members", members);
+         model.addAttribute("clubName", clubName);
+         System.out.println("DEBUG: Returning manage-members view with " + members.size() + " members");
+
+         return "manage-members";
+     }
 }
