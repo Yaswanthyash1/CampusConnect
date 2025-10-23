@@ -475,26 +475,58 @@
 
         updateBtn.addEventListener('click', () => {
             const status = select.value;
-            // create and submit form
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/project/update-status';
+            // send AJAX POST to frontend, which will forward to project-service
+            const payload = new URLSearchParams();
+            payload.append('projectId', projectId);
+            payload.append('status', status);
 
-            const projectIdInput = document.createElement('input');
-            projectIdInput.type = 'hidden';
-            projectIdInput.name = 'projectId';
-            projectIdInput.value = projectId;
-
-            const statusInput = document.createElement('input');
-            statusInput.type = 'hidden';
-            statusInput.name = 'status';
-            statusInput.value = status;
-
-            form.appendChild(projectIdInput);
-            form.appendChild(statusInput);
-            document.body.appendChild(form);
-            form.submit();
+            fetch('/project/update-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: payload.toString(),
+                // follow redirects so fetch resolves to final response
+                redirect: 'follow'
+            }).then(response => {
+                if (response.ok) {
+                    // show success toast, close modal, then reload page to reflect update
+                    showToast('Project status updated successfully');
+                    closeModal();
+                    setTimeout(() => { window.location.reload(); }, 900);
+                } else {
+                    showToast('Failed to update status (status ' + response.status + ')');
+                }
+            }).catch(err => {
+                console.error('Error updating status:', err);
+                showToast('Error updating project status');
+            });
         });
+
+        // small toast helper
+        function showToast(message) {
+            const t = document.createElement('div');
+            t.textContent = message;
+            // Position the toast at the top-center of the page
+            t.style.position = 'fixed';
+            t.style.top = '20px';
+            t.style.left = '50%';
+            t.style.transform = 'translateX(-50%)';
+            t.style.background = 'rgba(0,0,0,0.85)';
+            t.style.color = '#fff';
+            t.style.padding = '10px 14px';
+            t.style.borderRadius = '8px';
+            t.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)';
+            t.style.zIndex = '11000';
+            t.style.fontSize = '14px';
+            t.style.opacity = '0';
+            t.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+            document.body.appendChild(t);
+            // slight slide-down effect
+            t.style.transform = 'translateX(-50%) translateY(-6px)';
+            requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)'; });
+            setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(-6px)'; setTimeout(()=> t.remove(), 300); }, 2200);
+        }
     }
 </script>
 </body>
