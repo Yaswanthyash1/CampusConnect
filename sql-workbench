@@ -3,23 +3,24 @@ DROP USER IF EXISTS 'clubuser'@'localhost';
 DROP DATABASE IF EXISTS clubdb;
 DROP DATABASE IF EXISTS userdb;
 DROP DATABASE IF EXISTS requestdb;
+DROP DATABASE IF EXISTS projectdb;
 
 CREATE DATABASE clubdb;
 CREATE DATABASE userdb;
 CREATE DATABASE requestdb;
+CREATE DATABASE projectdb;
 
 CREATE USER 'clubuser'@'localhost' IDENTIFIED BY 'clubpass';
 GRANT ALL PRIVILEGES ON clubdb.* TO 'clubuser'@'localhost';
 GRANT ALL PRIVILEGES ON userdb.* TO 'clubuser'@'localhost';
 GRANT ALL PRIVILEGES ON requestdb.* TO 'clubuser'@'localhost';
+GRANT ALL PRIVILEGES ON projectdb.* TO 'clubuser'@'localhost';
 FLUSH PRIVILEGES;
 
 SHOW DATABASES;
 SELECT user, host FROM mysql.user;
 
-
 USE userdb;
-SHOW TABLES;
 
 -- User table
 CREATE TABLE user (
@@ -38,9 +39,9 @@ CREATE TABLE user (
     club VARCHAR(255)
 );
 
-USE clubdb;
 SHOW TABLES;
 
+USE clubdb;
 -- Club table
 CREATE TABLE club (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -58,9 +59,9 @@ CREATE TABLE club (
 );
 
 
-USE requestdb;
 SHOW TABLES;
 
+USE requestdb;
 -- Request table
 CREATE TABLE request (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -73,6 +74,8 @@ CREATE TABLE request (
     clubName VARCHAR(255),
     is_completed BIT(1)
 );
+
+SHOW TABLES;
 
 -- Event table
     -- CREATE TABLE event (
@@ -100,27 +103,30 @@ CREATE TABLE request (
     --     faculty_name VARCHAR(255) NOT NULL
     -- );
 
+USE projectdb;
     -- Project table
-    -- CREATE TABLE project (
-    --     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    --     attachments VARCHAR(255),
-    --     budget DOUBLE,
-    --     category VARCHAR(255),
-    --     clubname VARCHAR(255),
-    --     created_at DATETIME(6),
-    --     deliverables TEXT,
-    --     description TEXT,
-    --     enddate DATE,
-    --     mentor VARCHAR(255),
-    --     objectives TEXT,
-    --     priority VARCHAR(255),
-    --     projectname VARCHAR(255),
-    --     startdate DATE,
-    --     status VARCHAR(255),
-    --     teamsize INT,
-    --     technologies TEXT,
-    --     updated_at DATETIME(6)
-    -- );
+    CREATE TABLE project (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        attachments VARCHAR(255),
+        budget DOUBLE,
+        category VARCHAR(255),
+        clubname VARCHAR(255),
+        created_at DATETIME(6),
+        deliverables TEXT,
+        description TEXT,
+        enddate DATE,
+        mentor VARCHAR(255),
+        objectives TEXT,
+        priority VARCHAR(255),
+        projectname VARCHAR(255),
+        startdate DATE,
+        status VARCHAR(255),
+        teamsize INT,
+        technologies TEXT,
+        updated_at DATETIME(6)
+    );
+
+SHOW TABLES;
 
     -- ClubMember table
     -- CREATE TABLE clubmember (

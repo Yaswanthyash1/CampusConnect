@@ -276,11 +276,11 @@
     <div class="tab-navigation">
         <button class="tab-btn active" id="upcoming-tab" onclick="showTab('upcoming')">
             🚀 Upcoming Projects
-            <span class="tab-count" th:text="${#lists.size(upcomingProjects)}">0</span>
+            <span class="tab-count" th:text="${upcomingProjects != null ? #lists.size(upcomingProjects) : 0}">0</span>
         </button>
         <button class="tab-btn" id="past-tab" onclick="showTab('past')">
             📋 Past Projects
-            <span class="tab-count" th:text="${#lists.size(pastProjects)}">0</span>
+            <span class="tab-count" th:text="${pastProjects != null ? #lists.size(pastProjects) : 0}">0</span>
         </button>
     </div>
 
@@ -290,7 +290,7 @@
             <span class="section-icon">🚀</span>
             <span>Upcoming Projects</span>
         </div>
-        <div class="projects-grid" th:if="${!#lists.isEmpty(upcomingProjects)}">
+    <div class="projects-grid" th:if="${upcomingProjects != null and !#lists.isEmpty(upcomingProjects)}">
             <div class="project-card" th:each="project : ${upcomingProjects}">
                 <div class="project-header">
                     <div>
@@ -326,7 +326,7 @@
                 </div>
             </div>
         </div>
-        <div class="no-projects" th:if="${#lists.isEmpty(upcomingProjects)}">
+    <div class="no-projects" th:if="${upcomingProjects == null or #lists.isEmpty(upcomingProjects)}">
             <div class="no-projects-icon">🚀</div>
             <div>No upcoming projects at the moment.</div>
             <small>New projects will appear here once they are scheduled.</small>
@@ -339,7 +339,7 @@
             <span class="section-icon">📋</span>
             <span>Past Projects</span>
         </div>
-        <div class="projects-grid" th:if="${!#lists.isEmpty(pastProjects)}">
+    <div class="projects-grid" th:if="${pastProjects != null and !#lists.isEmpty(pastProjects)}">
             <div class="project-card" th:each="project : ${pastProjects}">
                 <div class="project-header">
                     <div>
@@ -369,7 +369,7 @@
                 </div>
             </div>
         </div>
-        <div class="no-projects" th:if="${#lists.isEmpty(pastProjects)}">
+    <div class="no-projects" th:if="${pastProjects == null or #lists.isEmpty(pastProjects)}">
             <div class="no-projects-icon">📋</div>
             <div>No past projects to show.</div>
             <small>Completed projects will appear here.</small>

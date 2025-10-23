@@ -32,10 +32,6 @@ public class ProjectController {
     @Autowired
     private ProjectService projectService;
 
-    @GetMapping("/add-project")
-    public String showAddProjectForm(Model model) {
-        return "add-project";
-    }
 
     @PostMapping("/addProject")
     public String addProject(@RequestParam("clubname") String clubName,
@@ -272,6 +268,7 @@ public class ProjectController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
 
     @GetMapping("/projects-dashboard")
     public String projectsDashboard(Model model) {

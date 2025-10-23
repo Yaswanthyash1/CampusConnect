@@ -18,3 +18,9 @@ SHOW tables;
 
 desc request;
 select * from request;
+
+USE projectdb;
+SHOW tables;
+
+-- desc project;
+select * from project;

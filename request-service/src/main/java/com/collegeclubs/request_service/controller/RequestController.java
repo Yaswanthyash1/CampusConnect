@@ -388,7 +388,7 @@ public class RequestController {
         try {
             logger.info("Fetching pending tasks for memberId: {}", memberId);
             // Query for pending OR accepted and not completed requests for the member
-            String sql = "SELECT * FROM request WHERE member_id = ? AND (status = 'pending' OR (status = 'accepted' AND (is_completed = 0 OR is_completed IS NULL)))";
+            String sql = "SELECT * FROM request WHERE member_id = ? AND (status = 'pending' OR (status = 'accepted' AND (is_completed != 1 OR is_completed IS NULL)))";
             logger.info("SQL Query: {} | Params: [{}]", sql, memberId);
             List<Request> pendingTasks = jdbcTemplate.query(
                 sql,

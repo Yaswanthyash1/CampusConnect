@@ -62,7 +62,8 @@ public class MainController {
         model.addAttribute("isClubHead", false);
         model.addAttribute("clubName", null);
 
-        if (isAuthenticated != null && isAuthenticated && "clubHead".equalsIgnoreCase(userType) && userIdentifier != null) {
+        if (isAuthenticated != null && isAuthenticated && "clubHead".equalsIgnoreCase(userType)
+                && userIdentifier != null) {
             // For club heads, userIdentifier is the club name itself
             model.addAttribute("clubName", userIdentifier);
             model.addAttribute("isClubHead", true);
@@ -83,6 +84,108 @@ public class MainController {
     @GetMapping("/request")
     public String showRequestForm() {
         return "request";
+    }
+
+    @GetMapping("/add-project")
+    public String showAddProjectForm(Model model) {
+        return "add-project";
+    }
+
+    @PostMapping("/addProject")
+    public String handleAddProject(@RequestParam("clubname") String clubName,
+                               @RequestParam("projectname") String projectName,
+                               @RequestParam("description") String description,
+                               @RequestParam("category") String category,
+                               @RequestParam("priority") String priority,
+                               @RequestParam("startdate") String startDate,
+                               @RequestParam("enddate") String endDate,
+                               @RequestParam("budget") double budget,
+                               @RequestParam("teamsize") int teamSize,
+                               @RequestParam(value = "technologies", required = false) String technologies,
+                               @RequestParam("objectives") String objectives,
+                               @RequestParam("deliverables") String deliverables,
+                               @RequestParam(value = "mentor", required = false) String mentor,
+                               @RequestParam("status") String status,
+                               @RequestParam(value = "attachments", required = false) MultipartFile[] attachments,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            String projectServiceUrl = "http://localhost:8084/addProject";
+            
+            // Create multipart request
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("clubname", clubName);
+            body.add("projectname", projectName);
+            body.add("description", description);
+            body.add("category", category);
+            body.add("priority", priority);
+            body.add("startdate", startDate);
+            body.add("enddate", endDate);
+            body.add("budget", budget);
+            body.add("teamsize", teamSize);
+            body.add("technologies", technologies);
+            body.add("objectives", objectives);
+            body.add("deliverables", deliverables);
+            body.add("mentor", mentor);
+            body.add("status", status);
+            
+            // Add attachments if present
+            if (attachments != null) {
+                for (MultipartFile attachment : attachments) {
+                    if (!attachment.isEmpty()) {
+                        ByteArrayResource fileResource = new ByteArrayResource(attachment.getBytes()) {
+                            @Override
+                            public String getFilename() {
+                                return attachment.getOriginalFilename();
+                            }
+                        };
+                        body.add("attachments", fileResource);
+                    }
+                }
+            }
+
+            // Set headers for multipart request
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            
+            // Create the request entity
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            System.out.println(requestEntity);
+            
+            // Forward request to project service
+            ResponseEntity<String> response = restTemplate.postForEntity(projectServiceUrl, requestEntity, String.class);
+            
+            if (response.getStatusCode() == HttpStatus.OK) {
+                redirectAttributes.addFlashAttribute("success", "Project created successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Failed to create project. Please try again.");
+            }
+        } catch (Exception e) {
+            System.err.println("Error forwarding project creation request: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Error creating project: " + e.getMessage());
+        }
+        
+        return "redirect:/add-project";
+    }
+
+    @GetMapping("/projects-dashboard")
+    public String showProjectsDashboard(Model model) {
+        try {
+            String projectsUrl = "http://localhost:8084/projects-dashboard";
+            ResponseEntity<String> response = restTemplate.getForEntity(projectsUrl, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                model.addAttribute("projectsContent", response.getBody());
+                return "projects-dashboard";
+            } else {
+                model.addAttribute("error", "Failed to fetch projects dashboard");
+                return "error";
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching projects dashboard: " + e.getMessage());
+            model.addAttribute("error", "Error accessing projects dashboard");
+            return "error";
+        }
     }
 
     @PostMapping("/register")
@@ -459,11 +562,11 @@ public class MainController {
             System.out.println("DEBUG: Calling user-service for members: " + membersUrl);
 
             ResponseEntity<java.util.List<java.util.Map<String, Object>>> membersResponse = restTemplate.exchange(
-                membersUrl,
-                org.springframework.http.HttpMethod.GET,
-                null,
-                new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {}
-            );
+                    membersUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
 
             if (membersResponse.getStatusCode().is2xxSuccessful() && membersResponse.getBody() != null) {
                 members = membersResponse.getBody();
@@ -472,8 +575,8 @@ public class MainController {
                 // Debug each member
                 for (java.util.Map<String, Object> member : members) {
                     System.out.println("DEBUG: Member - Name: " + member.get("name") +
-                                     ", SRN: " + member.get("srn") +
-                                     ", Club: " + member.get("club"));
+                            ", SRN: " + member.get("srn") +
+                            ", Club: " + member.get("club"));
                 }
             } else {
                 System.err.println("DEBUG: Failed to fetch members. Status: " + membersResponse.getStatusCode());
@@ -596,14 +699,28 @@ public class MainController {
         }
 
         try {
-            // Get the club the user is head of
-            String userUrl = userServiceUrl + "/user-service/api/user/details/srn?srn=" + userIdentifier;
-            ResponseEntity<Map> userResponse = restTemplate.getForEntity(userUrl, Map.class);
-
+            // Determine the club the user is head of. If the userType is "clubHead",
+            // the session's userIdentifier is stored as the club name (frontend
+            // convention),
+            // so prefer that to avoid a failed SRN lookup. Otherwise try the user-service.
             String clubName = null;
-            if (userResponse.getStatusCode().is2xxSuccessful() && userResponse.getBody() != null) {
-                clubName = (String) userResponse.getBody().get("club");
-                System.out.println("Club head's club: " + clubName);
+            if (userType != null && userType.equalsIgnoreCase("clubHead") && userIdentifier != null) {
+                clubName = userIdentifier;
+                System.out.println("Club head (from session) club: " + clubName);
+            } else {
+                try {
+                    String userUrl = userServiceUrl + "/user-service/api/user/details/srn?srn=" + userIdentifier;
+                    ResponseEntity<Map> userResponse = restTemplate.getForEntity(userUrl, Map.class);
+                    if (userResponse.getStatusCode().is2xxSuccessful() && userResponse.getBody() != null) {
+                        clubName = (String) userResponse.getBody().get("club");
+                        System.out.println("Club head's club (from user-service): " + clubName);
+                    } else {
+                        System.err.println(
+                                "Failed to fetch user details for club lookup: " + userResponse.getStatusCode());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error calling user-service for club lookup: " + e.getMessage());
+                }
             }
 
             // Fetch all requests from request-service
@@ -628,18 +745,25 @@ public class MainController {
                 java.util.List<java.util.Map<String, Object>> enrollments = new java.util.ArrayList<>();
 
                 for (java.util.Map<String, Object> request : allRequests) {
-                    String requestClub = (String) request.get("clubName");
-                    String status = (String) request.get("status");
-                    String type = (String) request.get("type");
-                    String is_completed = String.valueOf(request.get("is_completed"));
+                    String requestClub = request.get("clubName") == null ? null : request.get("clubName").toString();
+                    String status = request.get("status") == null ? null : request.get("status").toString();
+                    String type = request.get("type") == null ? null : request.get("type").toString();
+                    Object isCompletedObj = request.get("is_completed");
+                    String is_completed = isCompletedObj == null ? null : isCompletedObj.toString();
 
-                    System.out.println("DEBUG Request: type=" + type + ", club=" + requestClub + ", status=" + status + ", is_completed=" + is_completed);
+                    System.out.println(isCompletedObj);
+                    
+                    System.out.println("DEBUG Request: type=" + type + ", club=" + requestClub + ", status=" + status
+                            + ", is_completed=" + is_completed);
 
                     boolean clubMatch = (clubName != null && requestClub != null &&
                             requestClub.trim().equalsIgnoreCase(clubName.trim()));
                     boolean isPending = (status != null && status.trim().equalsIgnoreCase("pending"));
-                    boolean isAcceptedAndNotCompleted = (status != null && status.trim().equalsIgnoreCase("accepted") &&
-                        (is_completed.equals("0") || is_completed.equalsIgnoreCase("false")));
+                    // treat null, "null", "0" or "false" as not completed
+                    boolean isNotCompleted = (is_completed == null || is_completed.equals("null")
+                            || is_completed.equals("0") || is_completed.equalsIgnoreCase("false"));
+                    boolean isAcceptedAndNotCompleted = (status != null && status.trim().equalsIgnoreCase("accepted")
+                            && isNotCompleted);
 
                     if (clubMatch && (isPending || isAcceptedAndNotCompleted)) {
                         if (type != null) {
@@ -704,11 +828,12 @@ public class MainController {
         Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
 
         System.out.println("DEBUG showProcessedRequests: userIdentifier=" + userIdentifier +
-                          ", userType=" + userType + ", isAuthenticated=" + isAuthenticated +
-                          ", clubName=" + clubName);
+                ", userType=" + userType + ", isAuthenticated=" + isAuthenticated +
+                ", clubName=" + clubName);
 
         if (isAuthenticated == null || !isAuthenticated ||
-            (userType == null || (!userType.equalsIgnoreCase("clubHead") && !userType.equalsIgnoreCase("clubHead")))) {
+                (userType == null
+                        || (!userType.equalsIgnoreCase("clubHead") && !userType.equalsIgnoreCase("clubHead")))) {
             System.out.println("DEBUG: Authentication or userType check failed, redirecting to login");
             return "redirect:/login"; // Or an error page
         }
@@ -727,7 +852,8 @@ public class MainController {
 
             if (!clubName.equalsIgnoreCase(headOfClub)) {
                 // If not the head, redirect or show an error
-                System.out.println("DEBUG: Club mismatch - user's club: '" + headOfClub + "', requested: '" + clubName + "', redirecting to home");
+                System.out.println("DEBUG: Club mismatch - user's club: '" + headOfClub + "', requested: '" + clubName
+                        + "', redirecting to home");
                 return "redirect:/home";
             }
             System.out.println("DEBUG: Club verification passed, proceeding to fetch processed requests");
@@ -1043,11 +1169,11 @@ public class MainController {
             System.out.println("DEBUG: Calling user-service for members: " + membersUrl);
 
             ResponseEntity<java.util.List<java.util.Map<String, Object>>> membersResponse = restTemplate.exchange(
-                membersUrl,
-                org.springframework.http.HttpMethod.GET,
-                null,
-                new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {}
-            );
+                    membersUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
 
             if (membersResponse.getStatusCode().is2xxSuccessful() && membersResponse.getBody() != null) {
                 members = membersResponse.getBody();
@@ -1095,7 +1221,8 @@ public class MainController {
             ResponseEntity<String> response = restTemplate.getForEntity(clubServiceUrl, String.class);
             // The club-service returns a rendered HTML page, so we just forward it
             model.addAttribute("clubName", clubName);
-            // If you want to parse members from JSON, you can change club-service to return JSON and parse here
+            // If you want to parse members from JSON, you can change club-service to return
+            // JSON and parse here
             // For now, just render the template
             return "manage-members";
         } catch (Exception e) {
