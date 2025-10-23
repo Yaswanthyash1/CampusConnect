@@ -211,7 +211,7 @@ public class UserService {
     }
 
     public User findById(Long id) {
-        String sql = "SELECT * FROM user WHERE id = ?";
+        String sql = "SELECT * FROM user WHERE srn = ?";
         try {
             return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
                 User user = new User();
