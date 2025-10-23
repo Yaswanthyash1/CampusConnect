@@ -222,6 +222,13 @@ public class MainController {
         }
     }
 
+    // Keep compatibility with pages or redirects that use `/projects` by redirecting
+    // them to the frontend's projects dashboard which is backed by project-service.
+    @GetMapping("/projects")
+    public String redirectProjectsToDashboard() {
+        return "redirect:/projects-dashboard";
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> handleRegister(@RequestBody Map<String, Object> requestBody) {
         String url = userServiceUrl + "/user-service/api/auth/register";
@@ -285,6 +292,58 @@ public class MainController {
             session.invalidate();
         }
         return ResponseEntity.ok().build();
+    }
+
+    // Forward status update form from frontend to project-service
+    @PostMapping("/project/update-status")
+    public String handleUpdateProjectStatus(@RequestParam("projectId") Long projectId,
+                                            @RequestParam("status") String status,
+                                            RedirectAttributes redirectAttributes,
+                                            HttpServletRequest request) {
+        try {
+            String url = projectServiceBaseUrl + "/project/update-status";
+
+            org.springframework.util.LinkedMultiValueMap<String, String> body = new org.springframework.util.LinkedMultiValueMap<>();
+            body.add("projectId", String.valueOf(projectId));
+            body.add("status", status);
+
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
+
+            org.springframework.http.HttpEntity<org.springframework.util.MultiValueMap<String, String>> requestEntity =
+                    new org.springframework.http.HttpEntity<>(body, headers);
+
+            org.springframework.http.ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful() || response.getStatusCode().is3xxRedirection()) {
+                redirectAttributes.addFlashAttribute("success", "Project status updated successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Failed to update project status. Please try again.");
+            }
+        } catch (Exception e) {
+            System.err.println("Error forwarding update-status request: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Error updating project status: " + e.getMessage());
+        }
+
+        // Try to redirect back to the page the user came from (Referer). If not available,
+        // default to the projects dashboard which exists in the frontend.
+        String referer = request.getHeader("Referer");
+        if (referer != null && !referer.isEmpty()) {
+            try {
+                java.net.URI uri = new java.net.URI(referer);
+                String path = uri.getPath();
+                String query = uri.getQuery();
+                String redirectTarget = (query != null && !query.isEmpty()) ? path + "?" + query : path;
+                // Avoid redirecting to external hosts; only allow same-origin paths
+                if (redirectTarget != null && !redirectTarget.isEmpty()) {
+                    return "redirect:" + redirectTarget;
+                }
+            } catch (Exception ignored) {
+                // fall through to default
+            }
+        }
+
+        return "redirect:/projects-dashboard";
     }
 
     @GetMapping("/member")

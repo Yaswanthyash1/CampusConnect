@@ -224,10 +224,9 @@ public class ProjectController {
                                       @RequestParam("status") String status,
                                       RedirectAttributes redirectAttributes) {
         try {
-            Project project = projectService.getProjectById(projectId).orElse(null);
-            if (project != null) {
-                project.setStatus(status);
-                projectService.updateProject(project);
+            // Use the service helper that updates status and flushes immediately
+            Project updated = projectService.updateProjectStatus(projectId, status);
+            if (updated != null) {
                 redirectAttributes.addFlashAttribute("success", "Project status updated successfully!");
             } else {
                 redirectAttributes.addFlashAttribute("error", "Project not found!");

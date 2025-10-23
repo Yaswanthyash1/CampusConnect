@@ -4,6 +4,7 @@ import com.collegeclubs.project_service.model.Project;
 import com.collegeclubs.project_service.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -72,6 +73,23 @@ public class ProjectService {
 
     public Project updateProject(Project project) {
         return projectRepository.save(project);
+    }
+
+    /**
+     * Update only the status of a project and flush the change immediately.
+     * This ensures the change is written to the DB when called from controllers.
+     * Returns the saved Project or null if not found.
+     */
+    @Transactional
+    public Project updateProjectStatus(Long id, String status) {
+        Optional<Project> opt = projectRepository.findById(id);
+        if (opt.isPresent()) {
+            Project project = opt.get();
+            project.setStatus(status);
+            // saveAndFlush to make sure the change is persisted right away
+            return projectRepository.saveAndFlush(project);
+        }
+        return null;
     }
 
     public boolean existsById(Long id) {
