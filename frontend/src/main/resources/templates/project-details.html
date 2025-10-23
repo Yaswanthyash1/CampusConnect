@@ -248,8 +248,8 @@
 <div class="navbar">
     <h1>NITK CLUBS</h1>
     <div class="right">
-        <a class="nav-btn" href="/projects">Back to Projects</a>
-        <a class="nav-btn" href="/home">Home</a>
+        <a class="nav-btn" th:href="@{/projects-dashboard}">Back to Projects</a>
+        <a class="nav-btn" th:href="@{/home}">Home</a>
         <button class="nav-btn" id="logoutBtn">Logout</button>
     </div>
 </div>
@@ -263,14 +263,11 @@
         </div>
         <div class="hero-actions">
             <span class="priority-badge"
-                  th:classappend="${project.priority.toLowerCase()} == 'high' ? 'priority-high' :
-                                 (${project.priority.toLowerCase()} == 'medium' ? 'priority-medium' : 'priority-low')"
-                  th:text="${project.priority}">Priority</span>
+                  th:classappend="${project.priority != null ? (project.priority.toLowerCase() == 'high' ? ' priority-high' : (project.priority.toLowerCase() == 'medium' ? ' priority-medium' : ' priority-low')) : '' }"
+                   th:text="${project.priority}">Priority</span>
             <span class="status-badge"
-                  th:classappend="${project.status.toLowerCase().replace(' ', '-')} == 'planning' ? 'status-planning' :
-                                 (${project.status.toLowerCase().replace(' ', '-')} == 'in-progress' ? 'status-progress' :
-                                 (${project.status.toLowerCase().replace(' ', '-')} == 'on-hold' ? 'status-hold' : 'status-completed'))"
-                  th:text="${project.status}">Status</span>
+                  th:classappend="${project.status != null ? (project.status.toLowerCase().replace(' ', '-') == 'planning' ? ' status-planning' : (project.status.toLowerCase().replace(' ', '-') == 'in-progress' ? ' status-progress' : (project.status.toLowerCase().replace(' ', '-') == 'on-hold' ? ' status-hold' : ' status-completed'))) : '' }"
+                   th:text="${project.status}">Status</span>
         </div>
     </div>
 
@@ -331,20 +328,21 @@
     <div class="section" th:if="${project.attachments}">
         <span class="section-title">Project Documents</span>
         <div class="attachments">
-            <div class="attachment-item" th:each="attachment : ${#strings.arraySplit(project.attachments, ',')}">
+            <div class="attachment-item" th:each="attachment, attachmentStat : ${#strings.arraySplit(project.attachments, ',')}">
                 <span class="attachment-icon">📄</span>
                 <span class="attachment-name" th:text="${#strings.substringAfter(attachment, '_')}">Document</span>
                 <a class="btn btn-secondary"
-                   style="padding: 4px 12px; font-size: 12px;" th:href="@{'/project/download/' + ${project.id} + '/' + ${attachmentStat.index}}">Download</a>
+                   style="padding: 4px 12px; font-size: 12px;"
+                   th:href="@{/project/download/{projectId}/{fileIndex}(projectId=${project.id},fileIndex=${attachmentStat.index})}">Download</a>
             </div>
-        </div>
-    </div>
+         </div>
+     </div>
 
     <div class="back-row">
-        <a class="btn btn-primary" href="/projects">← Back to Projects</a>
-        <button class="btn btn-secondary" th:onclick="'updateProjectStatus(' + ${project.id} + ')'">📝 Update Status
+        <a class="btn btn-primary" th:href="@{/projects-dashboard}">← Back to Projects</a>
+        <button class="btn btn-secondary update-status-btn" th:attr="data-project-id=${project.id}, data-project-status=${project.status}">📝 Update Status
         </button>
-    </div>
+     </div>
 </div>
 
 <script>
@@ -353,9 +351,131 @@
         window.location.href = '/login';
     });
 
-    function updateProjectStatus(projectId) {
-        const status = prompt('Enter new status (Planning, In Progress, On Hold, Completed):');
-        if (status && ['Planning', 'In Progress', 'On Hold', 'Completed'].includes(status)) {
+    // Delegate clicks for any .update-status-btn in the page so we avoid inline JS quoting issues
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.update-status-btn');
+        if (!btn) return;
+        const projectId = btn.getAttribute('data-project-id');
+        const currentStatus = btn.getAttribute('data-project-status');
+        if (projectId) updateProjectStatus(projectId, currentStatus);
+    });
+
+    function updateProjectStatus(projectId, currentStatus) {
+         // Create overlay
+         const overlay = document.createElement('div');
+         overlay.style.position = 'fixed';
+         overlay.style.top = '0';
+         overlay.style.left = '0';
+         overlay.style.width = '100%';
+         overlay.style.height = '100%';
+         overlay.style.background = 'rgba(0,0,0,0.5)';
+         overlay.style.display = 'flex';
+         overlay.style.alignItems = 'center';
+         overlay.style.justifyContent = 'center';
+         overlay.style.zIndex = '10000';
+
+        // Create modal
+        const modal = document.createElement('div');
+        modal.style.background = '#0c1f28';
+        modal.style.color = '#fff';
+        modal.style.padding = '20px';
+        modal.style.borderRadius = '10px';
+        modal.style.boxShadow = '0 8px 30px rgba(0,0,0,0.6)';
+        modal.style.minWidth = '300px';
+        modal.style.maxWidth = '90%';
+
+        const title = document.createElement('div');
+        title.textContent = 'Update Project Status';
+        title.style.fontWeight = '700';
+        title.style.marginBottom = '12px';
+        modal.appendChild(title);
+
+        const select = document.createElement('select');
+        select.style.width = '100%';
+        select.style.padding = '10px';
+        select.style.borderRadius = '8px';
+        select.style.border = '1px solid rgba(255,255,255,0.1)';
+        select.style.background = '#072427';
+        select.style.color = '#fff';
+
+        const options = ['Planning', 'In Progress', 'On Hold', 'Completed'];
+        options.forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt;
+            o.textContent = opt;
+            select.appendChild(o);
+        });
+
+        // Preselect current status if provided
+        if (currentStatus) {
+            let matched = false;
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === currentStatus) {
+                    select.selectedIndex = i;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value.toLowerCase() === ('' + currentStatus).toLowerCase()) {
+                        select.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        modal.appendChild(select);
+
+        const btnRow = document.createElement('div');
+        btnRow.style.display = 'flex';
+        btnRow.style.justifyContent = 'flex-end';
+        btnRow.style.gap = '8px';
+        btnRow.style.marginTop = '14px';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.type = 'button';
+
+        const updateBtn = document.createElement('button');
+        updateBtn.textContent = 'Update';
+        updateBtn.className = 'btn btn-primary';
+        updateBtn.type = 'button';
+
+        btnRow.appendChild(cancelBtn);
+        btnRow.appendChild(updateBtn);
+        modal.appendChild(btnRow);
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // Focus select for keyboard users
+        select.focus();
+
+        // Close helper
+        const closeModal = () => {
+            if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+
+        cancelBtn.addEventListener('click', () => closeModal());
+
+        // Click outside modal closes
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeModal();
+        });
+
+        // Escape key closes modal
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') closeModal();
+        };
+        document.addEventListener('keydown', onKeyDown);
+
+        updateBtn.addEventListener('click', () => {
+            const status = select.value;
+            // create and submit form
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/project/update-status';
@@ -374,9 +494,7 @@
             form.appendChild(statusInput);
             document.body.appendChild(form);
             form.submit();
-        } else if (status) {
-            alert('Invalid status. Please enter one of: Planning, In Progress, On Hold, Completed');
-        }
+        });
     }
 </script>
 </body>

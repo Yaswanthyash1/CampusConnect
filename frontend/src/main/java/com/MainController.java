@@ -1265,6 +1265,86 @@ public class MainController {
         }
     }
 
+    @GetMapping("/project-details/{id}")
+    public String showProjectDetailsFrontend(@PathVariable Long id, Model model) {
+        try {
+            String url = projectServiceBaseUrl + "/api/project/" + id;
+            System.out.println("Fetching project details from: " + url);
+            ResponseEntity<java.util.Map> response = restTemplate.getForEntity(url, java.util.Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> projectMap = new java.util.HashMap<>(response.getBody());
+
+                // Convert date-like fields to java.util.Date so Thymeleaf's #dates.format works
+                convertDateFieldsIfNeeded(projectMap, "startDate", "endDate", "createdAt", "updatedAt");
+
+                model.addAttribute("project", projectMap);
+
+                // Add computed flags similar to project-service's template expectations
+                String status = projectMap.get("status") != null ? projectMap.get("status").toString() : "";
+                boolean isOngoing = "In Progress".equalsIgnoreCase(status);
+                boolean isCompleted = "Completed".equalsIgnoreCase(status);
+                model.addAttribute("isOngoing", isOngoing);
+                model.addAttribute("isCompleted", isCompleted);
+
+                return "project-details";
+            } else {
+                model.addAttribute("error", "Project not found or could not be fetched");
+                return "redirect:/projects";
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching project details: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("error", "Error fetching project details");
+            return "redirect:/projects";
+        }
+    }
+
+    // Helper to convert ISO date strings and epoch timestamps into java.util.Date
+    private void convertDateFieldsIfNeeded(java.util.Map<String, Object> map, String... keys) {
+        for (String key : keys) {
+            Object val = map.get(key);
+            if (val == null) continue;
+
+            try {
+                if (val instanceof Number) {
+                    // epoch millis
+                    long millis = ((Number) val).longValue();
+                    map.put(key, new java.util.Date(millis));
+                } else if (val instanceof String) {
+                    String s = (String) val;
+                    // Try ISO date-time / date formats
+                    try {
+                        java.time.Instant instant = null;
+                        if (s.matches("^\\d{4}-\\d{2}-\\d{2}T.*Z$")) {
+                            instant = java.time.Instant.parse(s);
+                        } else if (s.matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+                            instant = java.time.LocalDate.parse(s).atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
+                        } else if (s.matches("^\\d{4}-\\d{2}-\\d{2}.*")) {
+                            // try parsing as OffsetDateTime
+                            instant = java.time.OffsetDateTime.parse(s).toInstant();
+                        }
+                        if (instant != null) {
+                            map.put(key, java.util.Date.from(instant));
+                            continue;
+                        }
+                    } catch (Exception ignored) {
+                    }
+
+                    // fallback: try parse long millis
+                    try {
+                        long millis = Long.parseLong(s);
+                        map.put(key, new java.util.Date(millis));
+                    } catch (Exception ignored) {
+                        // leave original string if parsing fails
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
     // Utility method to parse and convert date fields in project maps
     private static void convertDateFields(java.util.Map<String, Object> map) {
         try {

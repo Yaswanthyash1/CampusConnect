@@ -9,6 +9,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +35,21 @@ public class ProjectController {
     @Autowired
     private ProjectService projectService;
 
+    // New API endpoint that returns project data as JSON so the frontend can render the template
+    @GetMapping("/api/project/{id}")
+    @ResponseBody
+    public ResponseEntity<?> getProjectAsJson(@PathVariable("id") Long id) {
+        try {
+            Project project = projectService.getProjectById(id).orElse(null);
+            if (project == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Project not found");
+            }
+            return ResponseEntity.ok(project);
+        } catch (Exception e) {
+            logger.error("Error fetching project as JSON", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching project");
+        }
+    }
 
     @PostMapping("/addProject")
     public String addProject(@RequestParam("clubname") String clubName,
@@ -288,3 +304,4 @@ public class ProjectController {
         return ResponseEntity.ok(payload);
     }
 }
+
