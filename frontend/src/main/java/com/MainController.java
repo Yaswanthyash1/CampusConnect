@@ -33,12 +33,15 @@ public class MainController {
     private final RestTemplate restTemplate;
     private final String userServiceUrl;
     private final String requestServiceUrl;
+    private final String projectServiceBaseUrl;
 
     public MainController(RestTemplate restTemplate, @Value("${user.service.url}") String userServiceUrl,
-            @Value("${request.service.url}") String requestServiceUrl) {
+            @Value("${request.service.url}") String requestServiceUrl,
+            @Value("${project.service.url}") String projectServiceBaseUrl) {
         this.restTemplate = restTemplate;
         this.userServiceUrl = userServiceUrl;
         this.requestServiceUrl = requestServiceUrl;
+        this.projectServiceBaseUrl = projectServiceBaseUrl;
     }
 
     @GetMapping("/")
@@ -109,8 +112,8 @@ public class MainController {
                                @RequestParam(value = "attachments", required = false) MultipartFile[] attachments,
                                RedirectAttributes redirectAttributes) {
         try {
-            String projectServiceUrl = "http://localhost:8084/addProject";
-            
+            String projectServiceUrl = projectServiceBaseUrl + "/addProject";
+
             // Create multipart request
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("clubname", clubName);
@@ -127,7 +130,7 @@ public class MainController {
             body.add("deliverables", deliverables);
             body.add("mentor", mentor);
             body.add("status", status);
-            
+
             // Add attachments if present
             if (attachments != null) {
                 for (MultipartFile attachment : attachments) {
@@ -138,6 +141,7 @@ public class MainController {
                                 return attachment.getOriginalFilename();
                             }
                         };
+                        // When using RestTemplate, set content-disposition by wrapping resource in HttpEntity if needed.
                         body.add("attachments", fileResource);
                     }
                 }
@@ -146,16 +150,17 @@ public class MainController {
             // Set headers for multipart request
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-            
+
             // Create the request entity
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
             System.out.println(requestEntity);
-            
+
             // Forward request to project service
             ResponseEntity<String> response = restTemplate.postForEntity(projectServiceUrl, requestEntity, String.class);
-            
-            if (response.getStatusCode() == HttpStatus.OK) {
+
+            // Treat 2xx and 3xx as success (project created / redirect). Otherwise show error.
+            if (response.getStatusCode().is2xxSuccessful() || response.getStatusCode().is3xxRedirection()) {
                 redirectAttributes.addFlashAttribute("success", "Project created successfully!");
             } else {
                 redirectAttributes.addFlashAttribute("error", "Failed to create project. Please try again.");
@@ -164,18 +169,47 @@ public class MainController {
             System.err.println("Error forwarding project creation request: " + e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Error creating project: " + e.getMessage());
         }
-        
+
         return "redirect:/add-project";
     }
 
     @GetMapping("/projects-dashboard")
     public String showProjectsDashboard(Model model) {
         try {
-            String projectsUrl = "http://localhost:8084/projects-dashboard";
-            ResponseEntity<String> response = restTemplate.getForEntity(projectsUrl, String.class);
+            String projectsUrl = projectServiceBaseUrl + "/projects-dashboard";
+            ResponseEntity<java.util.Map> response = restTemplate.getForEntity(projectsUrl, java.util.Map.class);
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                model.addAttribute("projectsContent", response.getBody());
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                // The project-service returns a JSON map with upcomingProjects and pastProjects
+                Object upcoming = response.getBody().get("upcomingProjects");
+                Object past = response.getBody().get("pastProjects");
+
+                // Convert lists of maps so date fields become java.util.Date for Thymeleaf formatting
+                java.util.List<java.util.Map<String, Object>> upcomingList = new java.util.ArrayList<>();
+                java.util.List<java.util.Map<String, Object>> pastList = new java.util.ArrayList<>();
+
+                if (upcoming instanceof java.util.List) {
+                    for (Object item : (java.util.List) upcoming) {
+                        if (item instanceof java.util.Map) {
+                            java.util.Map<String, Object> map = new java.util.HashMap<>((java.util.Map) item);
+                            convertDateFields(map);
+                            upcomingList.add(map);
+                        }
+                    }
+                }
+
+                if (past instanceof java.util.List) {
+                    for (Object item : (java.util.List) past) {
+                        if (item instanceof java.util.Map) {
+                            java.util.Map<String, Object> map = new java.util.HashMap<>((java.util.Map) item);
+                            convertDateFields(map);
+                            pastList.add(map);
+                        }
+                    }
+                }
+
+                model.addAttribute("upcomingProjects", upcomingList);
+                model.addAttribute("pastProjects", pastList);
                 return "projects-dashboard";
             } else {
                 model.addAttribute("error", "Failed to fetch projects dashboard");
@@ -1231,4 +1265,52 @@ public class MainController {
         }
     }
 
+    // Utility method to parse and convert date fields in project maps
+    private static void convertDateFields(java.util.Map<String, Object> map) {
+        try {
+            // Handle various possible representations
+            Object sd = map.get("startDate");
+            Object ed = map.get("endDate");
+            java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+
+            if (sd instanceof String) {
+                try {
+                    java.time.LocalDate ld = java.time.LocalDate.parse((String) sd);
+                    java.util.Date date = java.util.Date.from(ld.atStartOfDay(zone).toInstant());
+                    map.put("startDate", date);
+                } catch (Exception ex) {
+                    // Try parsing as ISO_OFFSET_DATE_TIME
+                    try {
+                        java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse((String) sd);
+                        java.util.Date date = java.util.Date.from(odt.toInstant());
+                        map.put("startDate", date);
+                    } catch (Exception ignored) {
+                    }
+                }
+            } else if (sd instanceof Number) {
+                long epoch = ((Number) sd).longValue();
+                map.put("startDate", new java.util.Date(epoch));
+            }
+
+            if (ed instanceof String) {
+                try {
+                    java.time.LocalDate ld = java.time.LocalDate.parse((String) ed);
+                    java.util.Date date = java.util.Date.from(ld.atStartOfDay(zone).toInstant());
+                    map.put("endDate", date);
+                } catch (Exception ex) {
+                    try {
+                        java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse((String) ed);
+                        java.util.Date date = java.util.Date.from(odt.toInstant());
+                        map.put("endDate", date);
+                    } catch (Exception ignored) {
+                    }
+                }
+            } else if (ed instanceof Number) {
+                long epoch = ((Number) ed).longValue();
+                map.put("endDate", new java.util.Date(epoch));
+            }
+        } catch (Exception e) {
+            System.err.println("convertDateFields error: " + e.getMessage());
+        }
+    }
 }

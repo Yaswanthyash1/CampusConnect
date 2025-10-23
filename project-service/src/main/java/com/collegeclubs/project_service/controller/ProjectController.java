@@ -22,6 +22,8 @@ import java.nio.file.Paths;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Controller
 public class ProjectController {
@@ -271,16 +273,18 @@ public class ProjectController {
 
 
     @GetMapping("/projects-dashboard")
-    public String projectsDashboard(Model model) {
+    public ResponseEntity<?> projectsDashboard() {
         // Get upcoming projects (end date is in the future)
         List<Project> upcomingProjects = projectService.getUpcomingProjects();
 
         // Get past projects (end date is in the past)
         List<Project> pastProjects = projectService.getPastProjects();
 
-        model.addAttribute("upcomingProjects", upcomingProjects);
-        model.addAttribute("pastProjects", pastProjects);
+        // Build a simple response payload so the frontend can render the template
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("upcomingProjects", upcomingProjects);
+        payload.put("pastProjects", pastProjects);
 
-        return "projects-dashboard";
+        return ResponseEntity.ok(payload);
     }
 }
