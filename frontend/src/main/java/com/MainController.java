@@ -1125,6 +1125,81 @@ public class MainController {
         }
     }
 
+    /**
+     * Show event details page
+     * Fetches the event from event-service and displays it
+     */
+    @GetMapping("/event-details/{id}")
+    public String showEventDetails(@PathVariable("id") Long id, Model model, HttpSession session) {
+        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+
+        if (isAuthenticated == null || !isAuthenticated) {
+            return "redirect:/login";
+        }
+
+        try {
+            // Fetch event details from event-service
+            String eventUrl = "http://localhost:8085/events/all";
+            ResponseEntity<List> response = restTemplate.getForEntity(eventUrl, List.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                List<Map<String, Object>> events = (List<Map<String, Object>>) response.getBody();
+
+                // Find the specific event by id
+                Map<String, Object> eventData = null;
+                for (Map<String, Object> evt : events) {
+                    Object evtId = evt.get("id");
+                    if (evtId != null && evtId.toString().equals(id.toString())) {
+                        eventData = evt;
+                        break;
+                    }
+                }
+
+                if (eventData == null) {
+                    System.err.println("Event with id=" + id + " not found");
+                    return "redirect:/events-dashboard";
+                }
+
+                model.addAttribute("eventData", eventData);
+
+                // Add user-friendly attribute names for Thymeleaf
+                model.addAttribute("eventId", eventData.get("id"));
+                model.addAttribute("clubName", eventData.get("clubName"));
+                model.addAttribute("eventName", eventData.get("eventName"));
+                model.addAttribute("description", eventData.get("description"));
+                model.addAttribute("venue", eventData.get("venue"));
+                model.addAttribute("type", eventData.get("type"));
+                model.addAttribute("budget", eventData.get("budget"));
+                model.addAttribute("registrationLink", eventData.get("registrationLink"));
+
+                // Handle timestamp and determine if event is upcoming
+                Object timestampObj = eventData.get("timestamp");
+                model.addAttribute("timestamp", timestampObj);
+
+                boolean isUpcoming = false;
+                if (timestampObj != null) {
+                    try {
+                        long timestampMillis = Long.parseLong(timestampObj.toString());
+                        long nowMillis = System.currentTimeMillis();
+                        isUpcoming = timestampMillis > nowMillis;
+                    } catch (Exception e) {
+                        System.err.println("Error parsing timestamp: " + e.getMessage());
+                    }
+                }
+                model.addAttribute("isUpcoming", isUpcoming);
+
+                return "event-details";
+            } else {
+                System.err.println("Failed to fetch events: " + response.getStatusCode());
+                return "redirect:/events-dashboard";
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching event details: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/events-dashboard";
+        }
+    }
+
     // Show processed (accepted/rejected) requests for a club
     @GetMapping("/club/{clubName}/processed-requests")
     public String showProcessedRequests(

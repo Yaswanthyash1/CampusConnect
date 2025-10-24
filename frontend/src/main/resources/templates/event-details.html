@@ -197,57 +197,55 @@
 
 <div class="container">
     <div class="event-header">
-        <h1 class="event-title" th:text="${event.eventName}">Event Name</h1>
-        <div class="event-sub">Organized by: <span th:text="${event.clubName}">Club Name</span></div>
-        <div class="event-desc" th:text="${event.description}">Full event description goes here...</div>
+        <h1 class="event-title" th:text="${eventName}">Event Name</h1>
+        <div class="event-sub">Organized by: <span th:text="${clubName}">Club Name</span></div>
+        <div class="event-desc" th:text="${description}">Full event description goes here...</div>
     </div>
 
     <div class="details-grid">
         <div class="detail-card">
             <span class="label">Date & Time</span>
-            <div class="value" th:text="${#dates.format(event.timestamp, 'yyyy-MM-dd HH:mm')}">Date</div>
+            <div class="value" th:text="${timestamp}">Date</div>
         </div>
         <div class="detail-card">
             <span class="label">Location</span>
-            <div class="value" th:text="${event.location}">Location</div>
+            <div class="value" th:text="${venue}">Location</div>
         </div>
         <div class="detail-card">
             <span class="label">Type</span>
-            <div class="value" th:text="${event.type}">Type</div>
+            <div class="value" th:text="${type}">Type</div>
         </div>
         <div class="detail-card">
             <span class="label">Budget</span>
-            <div class="value">₹ <span th:text="${event.budget}">Budget</span></div>
+            <div class="value">₹ <span th:text="${budget}">Budget</span></div>
         </div>
         <div class="detail-card">
             <span class="label">Registration</span>
             <div class="value">
-                <span class="status-badge status-closed" th:if="${isClubHead}">Disabled for Club Head</span>
-
-                <!-- Show "Register Now" if upcoming event and not club head -->
+                <!-- Show "Register Now" if upcoming event and has registration link -->
                 <a class="btn btn-primary" target="_blank"
-                   th:href="${event.registrationLink}"
-                   th:if="${isUpcoming} and !${isClubHead} and ${event.registrationLink}">
+                   th:href="${registrationLink}"
+                   th:if="${isUpcoming} and ${registrationLink != null and registrationLink != ''}">
                     Register Now
                 </a>
 
                 <!-- Show "Closed" if upcoming but no link -->
                 <span class="status-badge status-closed"
-                      th:if="${isUpcoming} and !${isClubHead} and (event.registrationLink == null or event.registrationLink == '')">
-            Closed
-        </span>
+                      th:if="${isUpcoming} and (${registrationLink == null or registrationLink == ''})">
+                    Closed
+                </span>
 
                 <!-- For past events -->
                 <span class="status-badge status-closed" th:if="${!isUpcoming}">
-            Registration Closed
-        </span>
+                    Registration Closed
+                </span>
             </div>
         </div>
 
     </div>
 
     <div class="back-section">
-        <a class="btn btn-primary" href="/events">← Back </a>
+        <a class="btn btn-primary" href="/events-dashboard">← Back to Events</a>
     </div>
 </div>
 
