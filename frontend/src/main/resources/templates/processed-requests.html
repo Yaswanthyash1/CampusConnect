@@ -224,11 +224,13 @@
             rej.style.display = 'none';
             accBtn.classList.add('active');
             rejBtn.classList.remove('active');
+            showToast('Viewing Accepted Requests');
         } else {
             acc.style.display = 'none';
             rej.style.display = 'block';
             accBtn.classList.remove('active');
             rejBtn.classList.add('active');
+            showToast('Viewing Rejected Requests');
         }
     }
 
@@ -240,9 +242,34 @@
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', function(){
             localStorage.clear();
-            window.location.href='/login';
+            showToast('Logging out...');
+            setTimeout(() => {
+                window.location.href='/login';
+            }, 500);
         });
     })();
+
+    // Toast notification helper function
+    function showToast(message) {
+        var t = document.createElement('div');
+        t.textContent = message;
+        Object.assign(t.style, {
+            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
+            background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 14px', borderRadius: '8px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)', zIndex: '11000', fontSize: '14px', opacity: '0',
+            transition: 'opacity 0.2s ease, transform 0.2s ease'
+        });
+        document.body.appendChild(t);
+        requestAnimationFrame(function() {
+            t.style.opacity = '1';
+            t.style.transform = 'translateX(-50%) translateY(0)';
+        });
+        setTimeout(function() {
+            t.style.opacity = '0';
+            t.style.transform = 'translateX(-50%) translateY(-6px)';
+            setTimeout(function() { t.remove(); }, 300);
+        }, 2200);
+    }
 </script>
 </body>
 </html>

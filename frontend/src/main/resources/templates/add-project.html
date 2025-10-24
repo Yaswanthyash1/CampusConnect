@@ -180,9 +180,15 @@
 <script>
     document.getElementById('logoutBtn').addEventListener('click', () => {
         localStorage.clear();
-        window.location.href = '/login';
+        showToast('Logging out...');
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 500);
+        }
     });
 
+        } else {
+            showToast('End date set');
     // Set minimum date to today for start date
     document.getElementById('startdate').min = new Date().toISOString().split('T')[0];
 
@@ -197,7 +203,7 @@
         const endDate = new Date(this.value);
 
         if (endDate <= startDate) {
-            alert('End date must be after start date');
+            showToast('End date must be after start date');
             this.value = '';
         }
     });
@@ -212,6 +218,51 @@
         const fr = document.getElementById('fromRequest');
         if (fr) fr.value = fromRequest;
     }
+
+    // Toast notification helper function
+    function showToast(message) {
+        var t = document.createElement('div');
+        t.textContent = message;
+        // Position at top-center with a slight slide-down effect
+        Object.assign(t.style, {
+            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
+            background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 14px', borderRadius: '8px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)', zIndex: '11000', fontSize: '14px', opacity: '0',
+            transition: 'opacity 0.2s ease, transform 0.2s ease'
+        });
+        document.body.appendChild(t);
+        requestAnimationFrame(function() {
+            t.style.opacity = '1';
+            t.style.transform = 'translateX(-50%) translateY(0)';
+        });
+        setTimeout(function() {
+            t.style.opacity = '0';
+            t.style.transform = 'translateX(-50%) translateY(-6px)';
+            setTimeout(function() { t.remove(); }, 300);
+        }, 2200);
+    }
+
+    // Display toast for success/error messages from server
+    window.addEventListener('DOMContentLoaded', function() {
+        const successMsg = document.querySelector('[style*="color: green"]');
+        const errorMsg = document.querySelector('[style*="color: red"]');
+
+        if (successMsg && successMsg.textContent.trim()) {
+            showToast(successMsg.textContent.trim());
+            // Hide the static message
+            successMsg.style.display = 'none';
+            // Redirect to projects-dashboard after showing toast
+            setTimeout(function() {
+                window.location.href = '/projects-dashboard';
+            }, 2000);
+        }
+
+        if (errorMsg && errorMsg.textContent.trim()) {
+            showToast(errorMsg.textContent.trim());
+            // Hide the static message
+            errorMsg.style.display = 'none';
+        }
+    });
 </script>
 </body>
 </html>

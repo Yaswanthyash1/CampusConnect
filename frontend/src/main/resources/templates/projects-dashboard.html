@@ -400,7 +400,10 @@
     // Add logout button handler (same as project-details.html)
     document.getElementById('logoutBtn').addEventListener('click', function () {
         localStorage.clear();
-        window.location.href = '/login';
+        showToast('Logging out...');
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 500);
     });
 
     // Delegate clicks for any .update-status-btn in the page to avoid inline JS quoting issues

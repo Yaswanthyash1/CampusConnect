@@ -348,7 +348,10 @@
 <script>
     document.getElementById('logoutBtn').addEventListener('click', () => {
         localStorage.clear();
-        window.location.href = '/login';
+        showToast('Logging out...');
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 500);
     });
 
     // Delegate clicks for any .update-status-btn in the page so we avoid inline JS quoting issues

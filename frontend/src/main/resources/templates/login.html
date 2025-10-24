@@ -88,6 +88,7 @@
 
     loginForm.addEventListener('submit', async (event) => {
         event.preventDefault(); // Prevent the form from submitting normally
+        showToast('Logging in...');
 
         const userType = document.getElementById('userType').value;
         const srn = document.getElementById('srn').value;
@@ -127,19 +128,45 @@
                     else if (userType === 'clubHead') localStorage.setItem('userIdentifier', clubName);
                     else if (userType === 'faculty') localStorage.setItem('userIdentifier', facultyEmail);
                 }
-                window.location.href = '/home';
+                showToast('Login successful! Redirecting...');
+                setTimeout(() => {
+                    window.location.href = '/home';
+                }, 500);
             } else {
                 // Handle unsuccessful login response
                 console.error('Login failed:', response.statusText);
                 const text = await response.text();
-                alert(text || 'Login failed');
+                showToast(text || 'Login failed');
             }
         } catch (error) {
             // Handle network or other errors
             console.error('Error:', error);
-            alert('Network error');
+            showToast('Network error');
         }
     });
+
+    // Toast notification helper function
+    function showToast(message) {
+        var t = document.createElement('div');
+        t.textContent = message;
+        // Position at top-center with a slight slide-down effect
+        Object.assign(t.style, {
+            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
+            background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 14px', borderRadius: '8px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)', zIndex: '11000', fontSize: '14px', opacity: '0',
+            transition: 'opacity 0.2s ease, transform 0.2s ease'
+        });
+        document.body.appendChild(t);
+        requestAnimationFrame(function() {
+            t.style.opacity = '1';
+            t.style.transform = 'translateX(-50%) translateY(0)';
+        });
+        setTimeout(function() {
+            t.style.opacity = '0';
+            t.style.transform = 'translateX(-50%) translateY(-6px)';
+            setTimeout(function() { t.remove(); }, 300);
+        }, 2200);
+    }
 </script>
 </body>
 </html>

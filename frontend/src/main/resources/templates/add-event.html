@@ -84,7 +84,93 @@
         const fr = document.getElementById('fromRequest');
         if (fr) fr.value = fromRequest;
         console.log('Creating event from request:', fromRequest);
+        showToast('Creating event from request #' + fromRequest);
     }
+
+    // Add file selection notification
+    const bannerInput = document.getElementById('banner');
+    if (bannerInput) {
+        bannerInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    showToast('File size exceeds 5MB limit');
+                    this.value = '';
+                } else {
+                    showToast('Banner image selected: ' + file.name);
+                }
+            }
+        });
+    }
+
+    // Add timestamp change notification
+    const timestampInput = document.getElementById('timestamp');
+    if (timestampInput) {
+        timestampInput.addEventListener('change', function() {
+            const selectedDate = new Date(this.value);
+            const now = new Date();
+            if (selectedDate < now) {
+                showToast('Warning: Event date is in the past');
+            } else {
+                showToast('Event date set');
+            }
+        });
+    }
+
+    // Add budget change notification
+    const budgetInput = document.getElementById('budget');
+    if (budgetInput) {
+        budgetInput.addEventListener('change', function() {
+            if (this.value && parseFloat(this.value) > 0) {
+                showToast('Budget set: ₹' + parseFloat(this.value).toLocaleString());
+            }
+        });
+    }
+
+    // Toast notification helper function
+    function showToast(message) {
+        var t = document.createElement('div');
+        t.textContent = message;
+        // Position at top-center with a slight slide-down effect
+        Object.assign(t.style, {
+            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
+            background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 14px', borderRadius: '8px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)', zIndex: '11000', fontSize: '14px', opacity: '0',
+            transition: 'opacity 0.2s ease, transform 0.2s ease'
+        });
+        document.body.appendChild(t);
+        requestAnimationFrame(function() {
+            t.style.opacity = '1';
+            t.style.transform = 'translateX(-50%) translateY(0)';
+        });
+        setTimeout(function() {
+            t.style.opacity = '0';
+            t.style.transform = 'translateX(-50%) translateY(-6px)';
+            setTimeout(function() { t.remove(); }, 300);
+        }, 2200);
+    }
+
+    // Display toast for success/error messages from server
+    window.addEventListener('DOMContentLoaded', function() {
+        const successMsg = document.querySelector('[style*="color: green"]');
+        const errorMsg = document.querySelector('[style*="color: red"]');
+
+        if (successMsg && successMsg.textContent.trim()) {
+            showToast(successMsg.textContent.trim());
+            // Hide the static message
+            successMsg.style.display = 'none';
+            // Redirect to projects-dashboard after showing toast
+            setTimeout(function() {
+                window.location.href = '/projects-dashboard';
+            }, 2000);
+        }
+
+        if (errorMsg && errorMsg.textContent.trim()) {
+            showToast(errorMsg.textContent.trim());
+            // Hide the static message
+            errorMsg.style.display = 'none';
+        }
+    });
 </script>
 </body>
 </html>

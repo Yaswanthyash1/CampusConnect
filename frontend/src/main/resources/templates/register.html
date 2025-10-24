@@ -57,6 +57,7 @@
         const inputs = Object.fromEntries(formData.entries());
 
         try {
+            showToast('Registering...');
             const res = await fetch('/register', {
                 method: 'POST',
                 headers: {
@@ -65,14 +66,17 @@
                 body: JSON.stringify(inputs),
             });
             if (res.ok) {
-                window.location.href = '/login';
+                showToast('Registration successful! Redirecting to login...');
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 1500);
                 return;
             }
             const text = await res.text();
-            alert(text || "Registration failed");
+            showToast(text || "Registration failed");
         } catch (err) {
             console.error(err);
-            alert("Couldn't Register. Please Try Again");
+            showToast("Couldn't Register. Please Try Again");
         }
     });
 
@@ -142,6 +146,28 @@
     }
     document.querySelector('select[name="userType"]').addEventListener('change', renderAdditionalFields);
     renderAdditionalFields();
+
+    // Toast notification helper function
+    function showToast(message) {
+        var t = document.createElement('div');
+        t.textContent = message;
+        Object.assign(t.style, {
+            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
+            background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 14px', borderRadius: '8px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)', zIndex: '11000', fontSize: '14px', opacity: '0',
+            transition: 'opacity 0.2s ease, transform 0.2s ease'
+        });
+        document.body.appendChild(t);
+        requestAnimationFrame(function() {
+            t.style.opacity = '1';
+            t.style.transform = 'translateX(-50%) translateY(0)';
+        });
+        setTimeout(function() {
+            t.style.opacity = '0';
+            t.style.transform = 'translateX(-50%) translateY(-6px)';
+            setTimeout(function() { t.remove(); }, 300);
+        }, 2200);
+    }
 </script>
 </body>
 </html>

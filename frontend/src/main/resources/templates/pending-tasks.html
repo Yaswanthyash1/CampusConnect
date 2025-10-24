@@ -498,6 +498,16 @@
 
         // Add active class to selected tab button
         document.getElementById(tabName + '-tab').classList.add('active');
+
+        // Show toast notification for tab change
+        const tabNames = {
+            'ideas': 'Ideas',
+            'queries': 'Queries',
+            'projects': 'Projects',
+            'events': 'Events',
+            'enrollments': 'Enrollments'
+        };
+        showToast('Viewing ' + (tabNames[tabName] || tabName));
     }
 
     function goHome() {
@@ -515,14 +525,17 @@
             })
             .then(response => {
                 if (response.ok) {
-                    location.reload(); // Refresh the page to update the list
+                    showToast('Idea request marked as completed successfully');
+                    setTimeout(function() { location.reload(); }, 900);
                 } else {
-                    alert('Error completing idea. Please try again.');
+                    return response.text().then(text => {
+                        showToast('Error completing idea: ' + text);
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error completing idea. Please try again.');
+                showToast('Error completing idea. Please try again.');
             });
         }
     }
@@ -538,14 +551,17 @@
             })
             .then(response => {
                 if (response.ok) {
-                    location.reload(); // Refresh the page to update the list
+                    showToast('Query request marked as completed successfully');
+                    setTimeout(function() { location.reload(); }, 900);
                 } else {
-                    alert('Error completing query. Please try again.');
+                    return response.text().then(text => {
+                        showToast('Error completing query: ' + text);
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error completing query. Please try again.');
+                showToast('Error completing query. Please try again.');
             });
         }
     }
@@ -579,15 +595,15 @@
             })
             .then(response => response.text().then(text => {
                 if (response.ok) {
-                    alert('Enrollment request approved successfully.');
-                    location.reload();
+                    showToast('Enrollment request approved successfully');
+                    setTimeout(function() { location.reload(); }, 900);
                 } else {
-                    alert('Error approving enrollment request: ' + text);
+                    showToast('Error approving enrollment request: ' + text);
                 }
             }))
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error approving enrollment request. Please try again.');
+                showToast('Error approving enrollment request. Please try again.');
             });
         }
     }
@@ -603,15 +619,15 @@
             })
             .then(response => response.text().then(text => {
                 if (response.ok) {
-                    alert('Enrollment request rejected.');
-                    location.reload();
+                    showToast('Enrollment request rejected');
+                    setTimeout(function() { location.reload(); }, 900);
                 } else {
-                    alert('Error rejecting enrollment request: ' + text);
+                    showToast('Error rejecting enrollment request: ' + text);
                 }
             }))
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error rejecting enrollment request. Please try again.');
+                showToast('Error rejecting enrollment request. Please try again.');
             });
         }
     }
@@ -678,6 +694,29 @@
         if (event.target == modal) {
             modal.style.display = "none";
         }
+    }
+
+    // Toast notification helper function
+    function showToast(message) {
+        var t = document.createElement('div');
+        t.textContent = message;
+        // Position at top-center with a slight slide-down effect
+        Object.assign(t.style, {
+            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
+            background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 14px', borderRadius: '8px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)', zIndex: '11000', fontSize: '14px', opacity: '0',
+            transition: 'opacity 0.2s ease, transform 0.2s ease'
+        });
+        document.body.appendChild(t);
+        requestAnimationFrame(function() {
+            t.style.opacity = '1';
+            t.style.transform = 'translateX(-50%) translateY(0)';
+        });
+        setTimeout(function() {
+            t.style.opacity = '0';
+            t.style.transform = 'translateX(-50%) translateY(-6px)';
+            setTimeout(function() { t.remove(); }, 300);
+        }, 2200);
     }
 </script>
 </body>
