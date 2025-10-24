@@ -841,20 +841,36 @@ public class MainController {
                     String requestClub = request.get("clubName") == null ? null : request.get("clubName").toString();
                     String status = request.get("status") == null ? null : request.get("status").toString();
                     String type = request.get("type") == null ? null : request.get("type").toString();
-                    Object isCompletedObj = request.get("is_completed");
-                    String is_completed = isCompletedObj == null ? null : isCompletedObj.toString();
+                    Object isCompletedObj = null;
+                    // The request-service may return completion in different shapes/names
+                    if (request.containsKey("is_completed")) {
+                        isCompletedObj = request.get("is_completed");
+                    } else if (request.containsKey("isCompleted")) {
+                        isCompletedObj = request.get("isCompleted");
+                    } else if (request.containsKey("completed")) {
+                        isCompletedObj = request.get("completed");
+                    } else {
+                        isCompletedObj = null;
+                    }
 
-                    System.out.println(isCompletedObj);
-                    
-                    System.out.println("DEBUG Request: type=" + type + ", club=" + requestClub + ", status=" + status
-                            + ", is_completed=" + is_completed);
+                    // Normalize completed -> a String for logging/compatibility
+                    String is_completed = (isCompletedObj == null) ? null : isCompletedObj.toString();
 
                     boolean clubMatch = (clubName != null && requestClub != null &&
                             requestClub.trim().equalsIgnoreCase(clubName.trim()));
                     boolean isPending = (status != null && status.trim().equalsIgnoreCase("pending"));
-                    // treat null, "null", "0" or "false" as not completed
-                    boolean isNotCompleted = (is_completed == null || is_completed.equals("null")
-                            || is_completed.equals("0") || is_completed.equalsIgnoreCase("false"));
+                    // treat null as not completed. If field present, interpret boolean/number/string properly
+                    boolean isNotCompleted;
+                    if (isCompletedObj == null) {
+                        isNotCompleted = true;
+                    } else if (isCompletedObj instanceof Boolean) {
+                        isNotCompleted = !((Boolean) isCompletedObj);
+                    } else if (isCompletedObj instanceof Number) {
+                        isNotCompleted = ((Number) isCompletedObj).intValue() != 1;
+                    } else {
+                        String s = isCompletedObj.toString();
+                        isNotCompleted = !("1".equals(s) || "true".equalsIgnoreCase(s));
+                    }
                     boolean isAcceptedAndNotCompleted = (status != null && status.trim().equalsIgnoreCase("accepted")
                             && isNotCompleted);
 
@@ -1450,6 +1466,208 @@ public class MainController {
             }
         } catch (Exception e) {
             System.err.println("convertDateFields error: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/request/mark-complete")
+    @ResponseBody
+    public ResponseEntity<String> markRequestComplete(@RequestParam("requestId") Long requestId, HttpSession session) {
+
+        String userIdentifier = (String) session.getAttribute("userIdentifier");
+        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+        String userType = (String) session.getAttribute("userType");
+
+        if (requestId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("requestId is required");
+        }
+
+        if (isAuthenticated == null || !isAuthenticated || userIdentifier == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated");
+        }
+
+        if (userType == null || (!userType.equalsIgnoreCase("clubHead") && !userType.equalsIgnoreCase("admin"))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User does not have permission");
+        }
+
+        try {
+            // Resolve club for clubHead users. Admins may mark any club's requests.
+            String clubName = null;
+            if (userType.equalsIgnoreCase("clubHead")) {
+                clubName = userIdentifier; // frontend stores club name in userIdentifier for club heads
+            }
+
+            // Fetch all club requests and locate the requested one
+            String requestUrl = requestServiceUrl + "/club-requests";
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> requestsResponse = restTemplate.exchange(
+                    requestUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
+
+            if (!requestsResponse.getStatusCode().is2xxSuccessful() || requestsResponse.getBody() == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to fetch requests");
+            }
+
+            boolean found = false;
+            String requestClub = null;
+            for (java.util.Map<String, Object> req : requestsResponse.getBody()) {
+                Object idObj = req.get("id");
+                if (idObj == null) idObj = req.get("requestId");
+                if (idObj == null) idObj = req.get("request_id");
+
+                Long idLong = null;
+                if (idObj instanceof Number) {
+                    idLong = ((Number) idObj).longValue();
+                } else if (idObj instanceof String) {
+                    try {
+                        idLong = Long.parseLong((String) idObj);
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+
+                if (idLong != null && idLong.equals(requestId)) {
+                    found = true;
+                    Object clubObj = req.get("clubName");
+                    requestClub = clubObj == null ? null : clubObj.toString();
+                    break;
+                }
+            }
+
+            if (!found) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request not found");
+            }
+
+            // If user is club head, ensure the request belongs to their club
+            if (clubName != null) {
+                if (requestClub == null || !requestClub.trim().equalsIgnoreCase(clubName.trim())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Request does not belong to your club");
+                }
+            }
+
+            // Call request-service to mark as completed
+            String updateUrl = requestServiceUrl + "/update-request-status";
+            Map<String, Object> requestData = new HashMap<>();
+            requestData.put("requestId", requestId);
+            requestData.put("action", "complete");
+            requestData.put("is_completed", 1);
+            if (requestClub != null) requestData.put("clubName", requestClub);
+
+            ResponseEntity<String> updateResponse = restTemplate.postForEntity(updateUrl, requestData, String.class);
+
+            if (updateResponse.getStatusCode().is2xxSuccessful()) {
+                return ResponseEntity.ok("Request marked completed");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Failed to update request status: " + updateResponse.getStatusCode());
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error marking request complete: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
+        }
+    }
+
+    @PostMapping("/complete-request")
+    @ResponseBody
+    public ResponseEntity<String> handleCompleteRequest(@RequestParam("requestId") Long requestId,
+                                                        @RequestParam(value = "action", required = false) String action,
+                                                        HttpSession session) {
+        // This endpoint exists because the frontend JS calls POST /complete-request with form-encoded body.
+        String userIdentifier = (String) session.getAttribute("userIdentifier");
+        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+        String userType = (String) session.getAttribute("userType");
+
+        if (requestId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("requestId is required");
+        }
+        if (isAuthenticated == null || !isAuthenticated || userIdentifier == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated");
+        }
+        if (userType == null || (!userType.equalsIgnoreCase("clubHead") && !userType.equalsIgnoreCase("admin"))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User does not have permission");
+        }
+
+        // Only 'complete' action is supported here; ignore or reject other actions.
+        if (action != null && !"complete".equalsIgnoreCase(action)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unsupported action");
+        }
+
+        try {
+            // Determine club for clubHead users
+            String clubName = null;
+            if (userType.equalsIgnoreCase("clubHead")) {
+                clubName = userIdentifier;
+            }
+
+            // Fetch requests from request-service to verify ownership
+            String listUrl = requestServiceUrl + "/club-requests";
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> listResp = restTemplate.exchange(
+                    listUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
+
+            if (!listResp.getStatusCode().is2xxSuccessful() || listResp.getBody() == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to fetch requests");
+            }
+
+            boolean found = false;
+            String requestClub = null;
+            for (java.util.Map<String, Object> req : listResp.getBody()) {
+                Object idObj = req.get("id");
+                if (idObj == null) idObj = req.get("requestId");
+                if (idObj == null) idObj = req.get("request_id");
+
+                Long idLong = null;
+                if (idObj instanceof Number) {
+                    idLong = ((Number) idObj).longValue();
+                } else if (idObj instanceof String) {
+                    try { idLong = Long.parseLong((String) idObj); } catch (NumberFormatException ignored) {}
+                }
+
+                if (idLong != null && idLong.equals(requestId)) {
+                    found = true;
+                    Object clubObj = req.get("clubName");
+                    requestClub = clubObj == null ? null : clubObj.toString();
+                    break;
+                }
+            }
+
+            if (!found) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request not found");
+            }
+
+            if (clubName != null) {
+                if (requestClub == null || !requestClub.trim().equalsIgnoreCase(clubName.trim())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Request does not belong to your club");
+                }
+            }
+
+            // Forward update to request-service
+            String updateUrl = requestServiceUrl + "/update-request-status";
+            Map<String, Object> requestData = new HashMap<>();
+            requestData.put("requestId", requestId);
+            requestData.put("action", "complete");
+            requestData.put("is_completed", 1);
+            if (requestClub != null) requestData.put("clubName", requestClub);
+
+            ResponseEntity<String> updateResp = restTemplate.postForEntity(updateUrl, requestData, String.class);
+
+            if (updateResp.getStatusCode().is2xxSuccessful()) {
+                return ResponseEntity.ok("Request marked completed");
+            } else {
+                String body = updateResp.getBody();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Failed to update request status: " + (body == null ? updateResp.getStatusCode() : body));
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error in /complete-request: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
         }
     }
 }

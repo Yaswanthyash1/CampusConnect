@@ -53,8 +53,9 @@ public class RequestController {
     @ResponseBody
     public ResponseEntity<List<Request>> viewRequests() {
         try {
-            List<Request> requests = requestService.getAllRequests();
-            System.out.println("DEBUG viewRequests: Returning " + requests.size() + " requests");
+            // Return only requests that are not completed (is_completed IS NULL or false)
+            List<Request> requests = requestService.getAllNotCompleted();
+            System.out.println("DEBUG viewRequests: Returning not-completed requests: " + requests.size());
 
             // Debug output of all requests
             for (Request req : requests) {
@@ -92,10 +93,22 @@ public class RequestController {
             String action = (String) requestData.get("action");
             String clubName = (String) requestData.get("clubName");
 
+            // Handle "complete" action separately: set is_completed = 1
+            if ("complete".equalsIgnoreCase(action)) {
+                String updateCompleteSql = "UPDATE request SET is_completed = 1 WHERE id = ?";
+                int updatedRows = jdbcTemplate.update(updateCompleteSql, requestId);
+                if (updatedRows > 0) {
+                    System.out.println("Request " + requestId + " marked as completed (is_completed=1)");
+                    return ResponseEntity.ok("Request marked completed");
+                } else {
+                    return ResponseEntity.notFound().build();
+                }
+            }
+
             String status;
-            if ("accept".equals(action)) {
+            if ("accept".equalsIgnoreCase(action)) {
                 status = "accepted";
-            } else if ("reject".equals(action)) {
+            } else if ("reject".equalsIgnoreCase(action)) {
                 status = "rejected";
             } else {
                 return ResponseEntity.badRequest().body("Invalid action");

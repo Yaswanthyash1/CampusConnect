@@ -41,6 +41,14 @@ public class RequestService {
         return requestRepository.findAll();
     }
 
+    public List<Request> getAllNotCompleted() {
+        return requestRepository.findAllNotCompleted();
+    }
+
+    public List<Request> getRequestsByStatusNotCompleted(String status) {
+        return requestRepository.findByStatusAndNotCompleted(status);
+    }
+
     public List<Request> getRequestsByType(String type) {
         return requestRepository.findByType(type);
     }

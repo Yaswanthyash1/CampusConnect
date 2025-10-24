@@ -28,4 +28,10 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
 
     @Query("SELECT r FROM Request r WHERE r.clubName = :clubName AND r.status <> 'pending' ORDER BY r.timestamp DESC")
     List<Request> findProcessedRequestsByClub(@Param("clubName") String clubName);
+
+    @Query("SELECT r FROM Request r WHERE r.status = :status AND (r.isCompleted IS NULL OR r.isCompleted = false) ORDER BY r.timestamp DESC")
+    List<Request> findByStatusAndNotCompleted(@Param("status") String status);
+
+    @Query("SELECT r FROM Request r WHERE r.isCompleted IS NULL OR r.isCompleted = false ORDER BY r.timestamp DESC")
+    List<Request> findAllNotCompleted();
 }
