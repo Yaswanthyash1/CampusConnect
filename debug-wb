@@ -1,9 +1,9 @@
 SELECT user, host FROM mysql.user;
 
-USE userdb;
+-- USE userdb;
 -- SHOW tables;
 -- desc user;
-select * from user;
+-- select * from user;
 
 
 -- USE clubdb;
@@ -16,11 +16,11 @@ select * from user;
 USE requestdb;
 SHOW tables;
 
-desc request;
+-- desc request;
 select * from request;
 
-USE projectdb;
+USE eventdb;
 SHOW tables;
 
--- desc project;
-select * from project;
+-- desc event;
+select * from event;

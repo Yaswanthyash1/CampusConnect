@@ -7,6 +7,7 @@ if [ "$1" == 'clean' ]; then
     cd ../frontend && ./gradlew clean
     cd ../club-service && ./gradlew clean
     cd ../project-service && ./gradlew clean
+    cd ../event-service && ./gradlew clean
     exit 0
 fi
 
@@ -16,6 +17,7 @@ fi
 (cd request-service && ./gradlew bootRun) &
 (cd club-service && ./gradlew bootRun) &
 (cd project-service && ./gradlew bootRun) &
+(cd event-service && ./gradlew bootRun) &
 
 
 # Function to kill all microservices

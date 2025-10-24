@@ -216,7 +216,7 @@ public class ClubController {
             event.put("id", raw.get("id"));
             event.put("eventname", raw.get("eventname"));
             event.put("type", raw.get("type"));
-            event.put("loc", raw.get("loc"));
+            event.put("venue", raw.get("venue"));
             event.put("clubname", raw.get("clubname"));
             event.put("budget", raw.get("budget"));
             event.put("description", raw.get("description"));
@@ -299,7 +299,7 @@ public class ClubController {
             model.addAttribute("error", "Failed to process banner file: " + e.getMessage());
             return "add-event";
         }
-        String insertSql = "INSERT INTO event (clubname, eventname, description, loc, type, timestamp, budget, registrationlink, banner) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String insertSql = "INSERT INTO event (clubname, eventname, description, venue, type, timestamp, budget, registrationlink, banner) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try {
             int result = jdbcTemplate.update(insertSql, clubName, eventName, description, location, type,
                     Timestamp.valueOf(parsedTimestamp), budget, registrationLink, bannerBytes);

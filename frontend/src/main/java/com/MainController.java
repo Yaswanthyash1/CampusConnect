@@ -34,14 +34,17 @@ public class MainController {
     private final String userServiceUrl;
     private final String requestServiceUrl;
     private final String projectServiceBaseUrl;
+    private final String eventServiceUrl;
 
     public MainController(RestTemplate restTemplate, @Value("${user.service.url}") String userServiceUrl,
             @Value("${request.service.url}") String requestServiceUrl,
-            @Value("${project.service.url}") String projectServiceBaseUrl) {
+            @Value("${project.service.url}") String projectServiceBaseUrl,
+            @Value("${event.service.url}") String eventServiceUrl) {
         this.restTemplate = restTemplate;
         this.userServiceUrl = userServiceUrl;
         this.requestServiceUrl = requestServiceUrl;
         this.projectServiceBaseUrl = projectServiceBaseUrl;
+        this.eventServiceUrl = eventServiceUrl;
     }
 
     @GetMapping("/")
@@ -89,9 +92,75 @@ public class MainController {
         return "request";
     }
 
+    // Show Add Event form from frontend (delegates creation to event-service @ 8085)
+    @GetMapping("/add-event")
+    public String showAddEventForm() {
+        return "add-event";
+    }
+
     @GetMapping("/add-project")
     public String showAddProjectForm(Model model) {
         return "add-project";
+    }
+
+    // Forward Add Event submission to event-service (multipart)
+    @PostMapping("/addEvent")
+    public String handleAddEvent(@RequestParam("clubname") String clubName,
+                                 @RequestParam("eventname") String eventName,
+                                 @RequestParam("description") String description,
+                                 @RequestParam("location") String location,
+                                 @RequestParam("type") String type,
+                                 @RequestParam("timestamp") String timestamp,
+                                 @RequestParam("budget") double budget,
+                                 @RequestParam("registrationlink") String registrationLink,
+                                 @RequestParam(value = "banner", required = false) MultipartFile banner,
+                                 @RequestParam(value = "fromRequest", required = false) String fromRequest,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            String url = eventServiceUrl + "/api/events";
+
+            // Build multipart body
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("clubname", clubName);
+            body.add("eventname", eventName);
+            body.add("description", description);
+            body.add("location", location);
+            body.add("type", type);
+            body.add("timestamp", timestamp);
+            body.add("budget", String.valueOf(budget));
+            body.add("registrationlink", registrationLink);
+            if (fromRequest != null && !fromRequest.isBlank()) {
+                body.add("fromRequest", fromRequest);
+            }
+
+            if (banner != null && !banner.isEmpty()) {
+                ByteArrayResource fileResource = new ByteArrayResource(banner.getBytes()) {
+                    @Override
+                    public String getFilename() {
+                        String name = banner.getOriginalFilename();
+                        return name != null ? name : "banner";
+                    }
+                };
+                body.add("banner", fileResource);
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful() || response.getStatusCode().is3xxRedirection()) {
+                redirectAttributes.addFlashAttribute("success", "Event created successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Failed to create event. Please try again.");
+            }
+        } catch (Exception e) {
+            System.err.println("Error forwarding add event request: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Error creating event: " + e.getMessage());
+        }
+
+        return "redirect:/add-event";
     }
 
     @PostMapping("/addProject")
@@ -799,6 +868,60 @@ public class MainController {
     @GetMapping("/events")
     public String showEventsPage() {
         return "events";
+    }
+
+    @GetMapping("/events-dashboard")
+    public String showEventsDashboard(Model model) {
+        try {
+            // Fetch upcoming events from event-service
+            String upcomingUrl = eventServiceUrl + "/events/upcoming";
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> upcomingResponse = restTemplate.exchange(
+                    upcomingUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
+
+            // Fetch past events from event-service
+            String pastUrl = eventServiceUrl + "/events/past";
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> pastResponse = restTemplate.exchange(
+                    pastUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
+
+            java.util.List<java.util.Map<String, Object>> upcomingEvents = upcomingResponse.getStatusCode().is2xxSuccessful() && upcomingResponse.getBody() != null
+                    ? upcomingResponse.getBody()
+                    : java.util.Collections.emptyList();
+
+            java.util.List<java.util.Map<String, Object>> pastEvents = pastResponse.getStatusCode().is2xxSuccessful() && pastResponse.getBody() != null
+                    ? pastResponse.getBody()
+                    : java.util.Collections.emptyList();
+
+            // Convert timestamp fields to java.util.Date so Thymeleaf #dates.format works
+            try {
+                for (java.util.Map<String, Object> ev : upcomingEvents) {
+                    convertDateFieldsIfNeeded(ev, "timestamp");
+                }
+                for (java.util.Map<String, Object> ev : pastEvents) {
+                    convertDateFieldsIfNeeded(ev, "timestamp");
+                }
+            } catch (Exception ignored) {
+            }
+
+            model.addAttribute("upcomingEvents", upcomingEvents);
+            model.addAttribute("pastEvents", pastEvents);
+
+        } catch (Exception e) {
+            System.err.println("Error fetching events for dashboard: " + e.getMessage());
+            e.printStackTrace();
+            // Provide empty lists to avoid template errors
+            model.addAttribute("upcomingEvents", java.util.Collections.emptyList());
+            model.addAttribute("pastEvents", java.util.Collections.emptyList());
+        }
+        
+        return "events-dashboard";
     }
 
     @GetMapping("/pending-tasks")

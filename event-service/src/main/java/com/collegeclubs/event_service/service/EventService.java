@@ -41,6 +41,10 @@ public class EventService {
         return eventRepository.findByTimestampBeforeOrderByTimestampDesc(now);
     }
 
+    public Event saveEvent(Event event) {
+        return eventRepository.save(event);
+    }
+
     private void setDescriptionPreview(Event event) {
         if (event.getDescription() == null || event.getDescription().isEmpty()) {
             event.setDescriptionPreview("No description available.");

@@ -385,7 +385,7 @@
 //             event.put("id", raw.get("id"));
 //             event.put("eventname", raw.get("eventname"));
 //             event.put("type", raw.get("type"));
-//             event.put("loc", raw.get("loc"));
+//             event.put("venue", raw.get("venue"));
 //             event.put("clubname", raw.get("clubname"));
 //             event.put("budget", raw.get("budget"));
 //             event.put("description", raw.get("description"));

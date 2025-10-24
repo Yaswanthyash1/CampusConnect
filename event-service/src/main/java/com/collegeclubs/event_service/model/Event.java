@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
+@Table(name = "event")
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,8 +20,8 @@ public class Event {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "loc")
-    private String location;
+    @Column(name = "venue")
+    private String venue;
 
     @Column(name = "type")
     private String type;
@@ -34,7 +35,9 @@ public class Event {
     @Column(name = "registrationlink")
     private String registrationLink;
 
-    @Column(name = "banner")
+    // Store potentially large images safely
+    @Lob
+    @Column(name = "banner", columnDefinition = "LONGBLOB")
     private byte[] banner;
 
     @Transient
@@ -73,12 +76,12 @@ public class Event {
         this.description = description;
     }
 
-    public String getLocation() {
-        return location;
+    public String getVenue() {
+        return venue;
     }
 
-    public void setLocation(String location) {
-        this.location = location;
+    public void setVenue(String venue) {
+        this.venue = venue;
     }
 
     public String getType() {
@@ -127,5 +130,15 @@ public class Event {
 
     public void setDescriptionPreview(String descriptionPreview) {
         this.descriptionPreview = descriptionPreview;
+    }
+
+    // Compatibility helpers for clients expecting a 'location' field
+    @Transient
+    public String getLocation() {
+        return this.venue;
+    }
+
+    public void setLocation(String location) {
+        this.venue = location;
     }
 }

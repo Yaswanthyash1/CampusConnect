@@ -4,17 +4,20 @@ DROP DATABASE IF EXISTS clubdb;
 DROP DATABASE IF EXISTS userdb;
 DROP DATABASE IF EXISTS requestdb;
 DROP DATABASE IF EXISTS projectdb;
+DROP DATABASE IF EXISTS eventdb;
 
 CREATE DATABASE clubdb;
 CREATE DATABASE userdb;
 CREATE DATABASE requestdb;
 CREATE DATABASE projectdb;
+CREATE DATABASE eventdb;
 
 CREATE USER 'clubuser'@'localhost' IDENTIFIED BY 'clubpass';
 GRANT ALL PRIVILEGES ON clubdb.* TO 'clubuser'@'localhost';
 GRANT ALL PRIVILEGES ON userdb.* TO 'clubuser'@'localhost';
 GRANT ALL PRIVILEGES ON requestdb.* TO 'clubuser'@'localhost';
 GRANT ALL PRIVILEGES ON projectdb.* TO 'clubuser'@'localhost';
+GRANT ALL PRIVILEGES ON eventdb.* TO 'clubuser'@'localhost';
 FLUSH PRIVILEGES;
 
 SHOW DATABASES;
@@ -77,31 +80,22 @@ CREATE TABLE request (
 
 SHOW TABLES;
 
+USE eventdb;
 -- Event table
-    -- CREATE TABLE event (
-    --     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    --     clubName VARCHAR(255),
-    --     eventName VARCHAR(255),
-    --     description VARCHAR(255),
-    --     location VARCHAR(255),
-    --     type VARCHAR(255),
-    --     timestamp DATETIME,
-    --     budget DOUBLE,
-    --     registrationLink VARCHAR(255),
-    --     banner VARBINARY(255),
-    --     clubName VARCHAR(255),
-    --     event_name VARCHAR(255),
-    --     registration_link VARCHAR(255),
-    --     loc VARCHAR(255)
-    -- );
-
-    -- Faculty table
-    -- CREATE TABLE faculty (
-    --     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    --     email VARCHAR(255) NOT NULL UNIQUE,
-    --     password VARCHAR(255) NOT NULL,
-    --     faculty_name VARCHAR(255) NOT NULL
-    -- );
+    CREATE TABLE event (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        clubName VARCHAR(255),
+        eventName VARCHAR(255),
+        description VARCHAR(255),
+        location VARCHAR(255),
+        type VARCHAR(255),
+        timestamp DATETIME,
+        budget DOUBLE,
+        registrationLink VARCHAR(255),
+        banner LONGBLOB,
+        venue VARCHAR(255)
+    );
+SHOW TABLES;
 
 USE projectdb;
     -- Project table
@@ -128,9 +122,3 @@ USE projectdb;
 
 SHOW TABLES;
 
-    -- ClubMember table
-    -- CREATE TABLE clubmember (
-    --     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    --     clubName VARCHAR(255),
-    --     srn VARCHAR(255)
-    -- );

@@ -322,7 +322,7 @@
                         <span class="event-type" th:text="${event['type']}">Type</span>
                     </div>
                     <div class="event-meta">
-                        <p><strong>📍</strong> <span th:text="${event['loc']}">Location</span></p>
+                        <p><strong>📍</strong> <span th:text="${event['venue']}">Location</span></p>
                         <p><strong>📅</strong>
                             <span th:if="${event['timestamp']}"
                                   th:text="${#dates.format(event['timestamp'],'dd MMM yyyy HH:mm')}">Date</span>
