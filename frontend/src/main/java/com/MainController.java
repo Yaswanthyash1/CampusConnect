@@ -1070,6 +1070,61 @@ public class MainController {
         return "pending-tasks";
     }
 
+    /**
+     * Show request details page
+     * Fetches the request from request-service and displays it
+     */
+    @GetMapping("/request-details/{id}")
+    public String showRequestDetails(@PathVariable("id") Long id, Model model, HttpSession session) {
+        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+
+        if (isAuthenticated == null || !isAuthenticated) {
+            return "redirect:/login";
+        }
+
+        try {
+            // Fetch request details from request-service
+            String requestUrl = "http://localhost:8083/request/" + id;
+            ResponseEntity<Map> response = restTemplate.getForEntity(requestUrl, Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Map<String, Object> requestData = response.getBody();
+                model.addAttribute("requestData", requestData);
+
+                // Add user-friendly attribute names for Thymeleaf
+                model.addAttribute("requestId", requestData.get("id"));
+                model.addAttribute("memberId", requestData.getOrDefault("memberId", requestData.get("member_id")));
+                model.addAttribute("type", requestData.get("type"));
+                model.addAttribute("description", requestData.get("description"));
+                model.addAttribute("status", requestData.get("status"));
+                model.addAttribute("timestamp", requestData.get("timestamp"));
+                model.addAttribute("clubName", requestData.get("clubName"));
+                model.addAttribute("filePath", requestData.get("filePath"));
+                model.addAttribute("fileName", requestData.getOrDefault("fileName", requestData.get("file_path")));
+
+                Object isCompletedObj = requestData.getOrDefault("isCompleted", requestData.get("is_completed"));
+                boolean isCompleted = false;
+                if (isCompletedObj instanceof Boolean) {
+                    isCompleted = (Boolean) isCompletedObj;
+                } else if (isCompletedObj instanceof Number) {
+                    isCompleted = ((Number) isCompletedObj).intValue() == 1;
+                } else if (isCompletedObj != null) {
+                    isCompleted = "1".equals(isCompletedObj.toString()) || "true".equalsIgnoreCase(isCompletedObj.toString());
+                }
+                model.addAttribute("isCompleted", isCompleted);
+
+                return "request-details";
+            } else {
+                System.err.println("Failed to fetch request details: " + response.getStatusCode());
+                return "redirect:/pending-tasks";
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching request details: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/pending-tasks";
+        }
+    }
+
     // Show processed (accepted/rejected) requests for a club
     @GetMapping("/club/{clubName}/processed-requests")
     public String showProcessedRequests(

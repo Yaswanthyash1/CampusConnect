@@ -182,7 +182,7 @@
 
     <!-- Dynamic Request Form -->
     <div id="requestFormContainer">
-        <form action="/submit-request" enctype="multipart/form-data" id="requestForm" method="post">
+        <form enctype="multipart/form-data" id="requestForm" onsubmit="return submitRequest(event)">
             <input id="requestType" name="type" type="hidden">
             <input id="memberId" name="memberId" type="hidden">
             <h3 id="selectedTypeTitle" style="color:#a0e7e5;margin-top:0"></h3>
@@ -206,61 +206,158 @@
             window.location.href = '/login';
         }, 500);
     });
-   function showForm(type) {
-       // hide options and show only the form
-       var options = document.getElementById('optionsContainer');
-       if (options) options.style.display = 'none';
-       var formContainer = document.getElementById('requestFormContainer');
-       formContainer.style.display = 'block';
-       document.getElementById('requestType').value = type;
-       document.getElementById('memberId').value = localStorage.getItem('userIdentifier') || '';
-       // set human-readable title
-       var titleMap = {
-           'idea': 'Suggest an Idea',
-           'query': 'Raise a Query',
-           'project': 'Project Proposal',
-           'event': 'Event Proposal'
-       };
-       var title = titleMap[type] || 'Request';
-       document.getElementById('selectedTypeTitle').textContent = title;
-       showToast('Selected: ' + title);
-       // focus description
-       setTimeout(function(){ document.getElementById('description').focus(); }, 100);
-   }
-   function hideForm() {
-       var options = document.getElementById('optionsContainer');
-       if (options) options.style.display = 'grid';
-       var formContainer = document.getElementById('requestFormContainer');
-       formContainer.style.display = 'none';
-       document.getElementById('requestForm').reset();
-       showToast('Form cancelled');
-   }
-   window.addEventListener('pageshow', function(event) {
-          var options = document.getElementById('optionsContainer');
-           if (options) options.style.display = 'grid';
-   });
 
-   // Toast notification helper function
-   function showToast(message) {
-       var t = document.createElement('div');
-       t.textContent = message;
-       Object.assign(t.style, {
-           position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
-           background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 14px', borderRadius: '8px',
-           boxShadow: '0 6px 20px rgba(0,0,0,0.4)', zIndex: '11000', fontSize: '14px', opacity: '0',
-           transition: 'opacity 0.2s ease, transform 0.2s ease'
-       });
-       document.body.appendChild(t);
-       requestAnimationFrame(function() {
-           t.style.opacity = '1';
-           t.style.transform = 'translateX(-50%) translateY(0)';
-       });
-       setTimeout(function() {
-           t.style.opacity = '0';
-           t.style.transform = 'translateX(-50%) translateY(-6px)';
-           setTimeout(function() { t.remove(); }, 300);
-       }, 2200);
-   }
+    function submitRequest(event) {
+        event.preventDefault();
+
+        const form = document.getElementById('requestForm');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const formData = new FormData(form);
+
+        // Disable submit button to prevent double submission
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
+        fetch('/submit-request', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                showSuccessToast('✅ Request submitted successfully!');
+                form.reset();
+                setTimeout(() => {
+                    hideForm();
+                }, 2000);
+            } else {
+                return response.text().then(text => {
+                    throw new Error(text || 'Failed to submit request');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorToast('❌ Error: ' + error.message);
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Request';
+        });
+
+        return false;
+    }
+
+    function showForm(type) {
+        // hide options and show only the form
+        var options = document.getElementById('optionsContainer');
+        if (options) options.style.display = 'none';
+        var formContainer = document.getElementById('requestFormContainer');
+        formContainer.style.display = 'block';
+        document.getElementById('requestType').value = type;
+        document.getElementById('memberId').value = localStorage.getItem('userIdentifier') || '';
+        // set human-readable title
+        var titleMap = {
+            'idea': 'Suggest an Idea',
+            'query': 'Raise a Query',
+            'project': 'Project Proposal',
+            'event': 'Event Proposal'
+        };
+        var title = titleMap[type] || 'Request';
+        document.getElementById('selectedTypeTitle').textContent = title;
+        showToast('Selected: ' + title);
+        // focus description
+        setTimeout(function(){ document.getElementById('description').focus(); }, 100);
+    }
+
+    function hideForm() {
+        var options = document.getElementById('optionsContainer');
+        if (options) options.style.display = 'grid';
+        var formContainer = document.getElementById('requestFormContainer');
+        formContainer.style.display = 'none';
+        document.getElementById('requestForm').reset();
+<!--        showToast('Form cancelled');-->
+    }
+
+    window.addEventListener('pageshow', function(event) {
+        var options = document.getElementById('optionsContainer');
+        if (options) options.style.display = 'grid';
+    });
+
+    // Toast notification helper function
+    function showToast(message, duration = 2200) {
+        var t = document.createElement('div');
+        t.textContent = message;
+        Object.assign(t.style, {
+            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
+            background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 14px', borderRadius: '8px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)', zIndex: '11000', fontSize: '14px', opacity: '0',
+            transition: 'opacity 0.2s ease, transform 0.2s ease'
+        });
+        document.body.appendChild(t);
+        requestAnimationFrame(function() {
+            t.style.opacity = '1';
+            t.style.transform = 'translateX(-50%) translateY(0)';
+        });
+        setTimeout(function() {
+            t.style.opacity = '0';
+            t.style.transform = 'translateX(-50%) translateY(-6px)';
+            setTimeout(function() { t.remove(); }, 300);
+        }, duration);
+    }
+
+    function showSuccessToast(message) {
+        var t = document.createElement('div');
+        t.textContent = message;
+        Object.assign(t.style, {
+            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
+            background: 'rgba(0,0,0,0.85)',
+            color: '#fff',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+            zIndex: '11000',
+            fontSize: '14px',
+            opacity: '0',
+            transition: 'opacity 0.2s ease, transform 0.2s ease'
+        });
+        document.body.appendChild(t);
+        requestAnimationFrame(function() {
+            t.style.opacity = '1';
+            t.style.transform = 'translateX(-50%) translateY(0)';
+        });
+        setTimeout(function() {
+            t.style.opacity = '0';
+            t.style.transform = 'translateX(-50%) translateY(-6px)';
+            setTimeout(function() { t.remove(); }, 300);
+        }, 2200);
+    }
+
+    function showErrorToast(message) {
+        var t = document.createElement('div');
+        t.textContent = message;
+        Object.assign(t.style, {
+            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
+            background: 'rgba(0,0,0,0.85)',
+            color: '#fff',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+            zIndex: '11000',
+            fontSize: '14px',
+            opacity: '0',
+            transition: 'opacity 0.2s ease, transform 0.2s ease'
+        });
+        document.body.appendChild(t);
+        requestAnimationFrame(function() {
+            t.style.opacity = '1';
+            t.style.transform = 'translateX(-50%) translateY(0)';
+        });
+        setTimeout(function() {
+            t.style.opacity = '0';
+            t.style.transform = 'translateX(-50%) translateY(-6px)';
+            setTimeout(function() { t.remove(); }, 300);
+        }, 2200);
+    }
 </script>
 </body>
 </html>

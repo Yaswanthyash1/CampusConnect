@@ -214,56 +214,56 @@
     <div class="request-header">
         <div class="header-left">
             <h1 class="header-title">Request Details</h1>
-            <div class="header-sub">Submitted by: <span th:text="${request.memberId}">Member ID</span></div>
-            <div class="header-type" th:text="${request.type}">Request Type</div>
+            <div class="header-sub">Submitted by: <span th:text="${memberId}">Member ID</span></div>
+            <div class="header-type" th:text="${type}">Request Type</div>
         </div>
     </div>
 
     <div class="details-grid">
         <div class="detail-card">
             <span class="label">Request ID</span>
-            <div class="value" th:text="${request.id}">ID</div>
+            <div class="value" th:text="${requestId}">ID</div>
         </div>
         <div class="detail-card">
             <span class="label">Member SRN</span>
-            <div class="value" th:text="${request.memberId}">Member ID</div>
+            <div class="value" th:text="${memberId}">Member ID</div>
         </div>
         <div class="detail-card">
             <span class="label">Type</span>
-            <div class="value" th:text="${request.type}">Type</div>
+            <div class="value" th:text="${type}">Type</div>
         </div>
         <div class="detail-card">
             <span class="label">Status</span>
             <div class="value">
                 <span class="status-badge"
-                      th:classappend="${request.status == 'pending'} ? 'status-pending' :
-                                     (${request.status == 'accepted'} ? 'status-accepted' :
-                                     (${request.status == 'rejected'} ? 'status-rejected' : 'status-completed'))"
-                      th:text="${request.status}">Status</span>
+                      th:classappend="${status == 'pending'} ? 'status-pending' :
+                                     (${status == 'accepted'} ? 'status-accepted' :
+                                     (${status == 'rejected'} ? 'status-rejected' : 'status-completed'))"
+                      th:text="${status}">Status</span>
             </div>
         </div>
         <div class="detail-card">
             <span class="label">Submitted</span>
-            <div class="value" th:text="${request.timestamp}">Timestamp</div>
+            <div class="value" th:text="${timestamp}">Timestamp</div>
         </div>
-        <div class="detail-card" th:if="${request.clubName}">
+        <div class="detail-card" th:if="${clubName}">
             <span class="label">Target Club</span>
-            <div class="value" th:text="${request.clubName}">Club Name</div>
+            <div class="value" th:text="${clubName}">Club Name</div>
         </div>
     </div>
 
     <div class="description-section">
         <span class="label">Description</span>
-        <div class="content" th:text="${request.description}">Request description goes here...</div>
+        <div class="content" th:text="${description}">Request description goes here...</div>
     </div>
 
-    <div class="detail-card" th:if="${request.filePath}">
+    <div class="detail-card" th:if="${filePath}">
         <span class="label">Attached File</span>
         <div class="value">
             <div class="file-info">
-                <div class="file-name" th:text="${request.fileName}">File Name</div>
-                <div class="file-path" th:text="${request.filePath}">File Path</div>
-                <a class="btn btn-secondary" style="margin-top: 10px;" th:href="@{'/request/file/' + ${request.id}}">
+                <div class="file-name" th:text="${fileName}">File Name</div>
+                <div class="file-path" th:text="${filePath}">File Path</div>
+                <a class="btn btn-secondary" style="margin-top: 10px;" th:href="@{'/request/file/' + ${requestId}}">
                     📁 Download File
                 </a>
             </div>

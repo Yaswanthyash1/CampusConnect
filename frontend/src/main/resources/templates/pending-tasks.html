@@ -295,6 +295,10 @@
             font-weight: 600;
             text-transform: uppercase;
         }
+        a.logout-btn,
+        a.view-details-btn {
+            text-decoration: none;
+        }
         .status-accepted { background: #17a2b8; color: #fff; }
         .completion-completed { background: #28a745; color: #fff; }
         .completion-pending { background: #6c757d; color: #fff; }
@@ -305,7 +309,7 @@
 <div class="navbar">
     <h1>NITK CLUBS</h1>
     <div class="right">
-        <a class="logout-btn" href="/home">Back to Home</a>
+        <a class="logout-btn" href="/home">Home</a>
         <button class="logout-btn" id="logoutBtn">Logout</button>
     </div>
 </div>
@@ -350,9 +354,7 @@
                 <p><strong>Submitted:</strong> <span th:text="${request.timestamp}"></span></p>
                 <div class="request-actions">
                     <button class="complete-btn" th:onclick="'completeIdea(' + ${request.id} + ')'">✔️ Complete</button>
-                    <button class="view-details-btn"
-                            th:onclick="'viewRequestDetails(' + ${request.id} + ')'">🔍 View Details
-                    </button>
+                    <a class="view-details-btn" th:href="@{'/request-details/' + ${request.id}}">🔍 View Details</a>
                 </div>
             </li>
         </ul>
@@ -370,16 +372,14 @@
             <span>Queries</span>
         </div>
         <ul class="task-list" th:if="${!#lists.isEmpty(queries)}">
-            <li th:each="request : ${queries}">
-                <p><strong>Member SRN:</strong> <span class="member-id" th:text="${request.memberId}"></span></p>
-                <p><strong>Description:</strong> <span class="description" th:text="${request.description}"></span></p>
-                <p><strong>Submitted:</strong> <span th:text="${request.timestamp}"></span></p>
+            <li th:each="req : ${queries}">
+                <p><strong>Member SRN:</strong> <span class="member-id" th:text="${req.memberId}"></span></p>
+                <p><strong>Description:</strong> <span class="description" th:text="${req.description}"></span></p>
+                <p><strong>Submitted:</strong> <span th:text="${req.timestamp}"></span></p>
                 <div class="request-actions">
-                    <button class="complete-btn" th:onclick="'completeQuery(' + ${request.id} + ')'">✔️ Complete
+                    <button class="complete-btn" th:onclick="'completeQuery(' + ${req.id} + ')'">✔️ Complete
                     </button>
-                    <button class="view-details-btn"
-                            th:onclick="'viewRequestDetails(' + ${request.id} + ')'">🔍 View Details
-                    </button>
+                    <a class="view-details-btn" th:href="@{'/request-details/' + ${req.id}}">🔍 View Details</a>
                 </div>
             </li>
         </ul>
@@ -397,16 +397,13 @@
             <span>Projects</span>
         </div>
         <ul class="task-list" th:if="${!#lists.isEmpty(projects)}">
-            <li th:each="request : ${projects}">
-                <p><strong>Member SRN:</strong> <span class="member-id" th:text="${request.memberId}"></span></p>
-                <p><strong>Description:</strong> <span class="description" th:text="${request.description}"></span></p>
-                <p><strong>Submitted:</strong> <span th:text="${request.timestamp}"></span></p>
+            <li th:each="req : ${projects}">
+                <p><strong>Member SRN:</strong> <span class="member-id" th:text="${req.memberId}"></span></p>
+                <p><strong>Description:</strong> <span class="description" th:text="${req.description}"></span></p>
+                <p><strong>Submitted:</strong> <span th:text="${req.timestamp}"></span></p>
                 <div class="request-actions">
-                    <button class="complete-btn" th:onclick="'completeProject(' + ${request.id} + ')'">✔️ Complete
-                    </button>
-                    <button class="view-details-btn"
-                            th:onclick="'viewRequestDetails(' + ${request.id} + ')'">🔍 View Details
-                    </button>
+                    <button class="complete-btn" th:onclick="'completeProject(' + ${req.id} + ')'">✔️ Complete</button>
+                    <a class="view-details-btn" th:href="@{'/request-details/' + ${req.id}}">🔍 View Details</a>
                 </div>
             </li>
         </ul>
@@ -424,16 +421,13 @@
             <span>Events</span>
         </div>
         <ul class="task-list" th:if="${!#lists.isEmpty(events)}">
-            <li th:each="request : ${events}">
-                <p><strong>Member SRN:</strong> <span class="member-id" th:text="${request.memberId}"></span></p>
-                <p><strong>Description:</strong> <span class="description" th:text="${request.description}"></span></p>
-                <p><strong>Submitted:</strong> <span th:text="${request.timestamp}"></span></p>
+            <li th:each="req : ${events}">
+                <p><strong>Member SRN:</strong> <span class="member-id" th:text="${req.memberId}"></span></p>
+                <p><strong>Description:</strong> <span class="description" th:text="${req.description}"></span></p>
+                <p><strong>Submitted:</strong> <span th:text="${req.timestamp}"></span></p>
                 <div class="request-actions">
-                    <button class="complete-btn" th:onclick="'completeEvent(' + ${request.id} + ')'">✔️ Complete
-                    </button>
-                    <button class="view-details-btn"
-                            th:onclick="'viewRequestDetails(' + ${request.id} + ')'">🔍 View Details
-                    </button>
+                    <button class="complete-btn" th:onclick="'completeEvent(' + ${req.id} + ')'">✔️ Complete</button>
+                    <a class="view-details-btn" th:href="@{'/request-details/' + ${req.id}}">🔍 View Details</a>
                 </div>
             </li>
         </ul>
@@ -633,6 +627,8 @@
     }
 
     function viewRequestDetails(requestId) {
+        // This function is no longer needed since we use direct links
+        // Keeping it here for backward compatibility
         window.location.href = '/request-details/' + requestId;
     }
 
