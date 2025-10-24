@@ -12,6 +12,7 @@ IF "%1"=="clean" (
     pushd frontend && call gradlew.bat clean && popd
     pushd club-service && call gradlew.bat clean && popd
     pushd project-service && call gradlew.bat clean && popd
+    pushd event-service && call gradlew.bat clean && popd
     goto :eof
 )
 
@@ -20,6 +21,7 @@ start "user-service" /b cmd /c "cd /d %ROOT_DIR%\user-service && call gradlew.ba
 start "request-service" /b cmd /c "cd /d %ROOT_DIR%\request-service && call gradlew.bat bootRun"
 start "club-service" /b cmd /c "cd /d %ROOT_DIR%\club-service && call gradlew.bat bootRun"
 start "project-service" /b cmd /c "cd /d %ROOT_DIR%\project-service && call gradlew.bat bootRun"
+start "event-service" /b cmd /c "cd /d %ROOT_DIR%\event-service && call gradlew.bat bootRun"
 
 REM Run frontend in the current window
 pushd frontend
@@ -29,7 +31,7 @@ popd
 REM Cleanup after frontend stops
 :cleanup
 echo Killing all microservices...
-for %%T in ("user-service","request-service","club-service","project-service") do (
+for %%T in ("user-service","request-service","club-service","project-service","event-service") do (
     for /f "tokens=2" %%P in ('tasklist /v /fi "imagename eq java.exe" /fi "windowtitle eq %%~T*" ^| findstr /i java.exe') do (
         taskkill /F /PID %%P >nul 2>&1
     )

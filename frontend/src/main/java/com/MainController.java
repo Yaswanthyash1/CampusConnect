@@ -1006,7 +1006,6 @@ public class MainController {
 
                     boolean clubMatch = (clubName != null && requestClub != null &&
                             requestClub.trim().equalsIgnoreCase(clubName.trim()));
-                    boolean isPending = (status != null && status.trim().equalsIgnoreCase("pending"));
                     // treat null as not completed. If field present, interpret boolean/number/string properly
                     boolean isNotCompleted;
                     if (isCompletedObj == null) {
@@ -1022,7 +1021,7 @@ public class MainController {
                     boolean isAcceptedAndNotCompleted = (status != null && status.trim().equalsIgnoreCase("accepted")
                             && isNotCompleted);
 
-                    if (clubMatch && (isPending || isAcceptedAndNotCompleted)) {
+                    if (clubMatch && isAcceptedAndNotCompleted) {
                         if (type != null) {
                             if (type.equalsIgnoreCase("idea")) {
                                 ideas.add(request);

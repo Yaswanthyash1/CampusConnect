@@ -111,11 +111,71 @@ public class EventController {
 
             Event saved = eventService.saveEvent(event);
 
+            // Mark all matching requests as completed (clubName matches and description matches eventName)
+            if (saved != null) {
+                try {
+                    org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                    String requestServiceUrl = "http://localhost:8083/api/requests/mark-completed";
+
+                    java.util.Map<String, String> requestData = new java.util.HashMap<>();
+                    requestData.put("clubName", clubName);
+                    requestData.put("description", eventName);
+
+                    System.out.println("Marking matching requests as completed for clubName=" + clubName + ", eventName=" + eventName);
+                    ResponseEntity<String> response = restTemplate.postForEntity(
+                        requestServiceUrl, requestData, String.class);
+
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        System.out.println("Successfully marked matching requests as completed");
+                    } else {
+                        System.out.println("Failed to mark matching requests as completed: " + response.getStatusCode());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error marking matching requests as completed: " + e.getMessage());
+                    e.printStackTrace();
+                    // Don't fail the event creation if request update fails
+                }
+            }
+
             return ResponseEntity.ok(saved.getId());
         } catch (Exception e) {
             System.err.println("Error creating event (REST): " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Error creating event");
+        }
+    }
+
+    /**
+     * API endpoint to search for events by clubName and eventName
+     * Used by request-service to check if matching events exist
+     */
+    @GetMapping("/api/events/search")
+    @ResponseBody
+    public ResponseEntity<List<Event>> searchEventsByClubAndName(
+            @RequestParam("clubName") String clubName,
+            @RequestParam("eventName") String eventName) {
+        try {
+            System.out.println("Searching for events: clubName=" + clubName + ", eventName=" + eventName);
+
+            List<Event> allEvents = eventService.getAllEvents();
+            List<Event> matchingEvents = new java.util.ArrayList<>();
+
+            // Case-insensitive matching
+            for (Event event : allEvents) {
+                if (event.getClubName() != null && event.getEventName() != null &&
+                    event.getClubName().equalsIgnoreCase(clubName) &&
+                    event.getEventName().equalsIgnoreCase(eventName)) {
+                    matchingEvents.add(event);
+                }
+            }
+
+            System.out.println("Found " + matchingEvents.size() + " matching events");
+            return ResponseEntity.ok(matchingEvents);
+        } catch (Exception e) {
+            System.err.println("Error searching events: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new java.util.ArrayList<>());
         }
     }
 }

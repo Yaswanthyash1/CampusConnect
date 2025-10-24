@@ -34,4 +34,9 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
 
     @Query("SELECT r FROM Request r WHERE r.isCompleted IS NULL OR r.isCompleted = false ORDER BY r.timestamp DESC")
     List<Request> findAllNotCompleted();
+
+    // Find requests by clubName and description (for matching with projects/events)
+    // Use case-insensitive comparison for both clubName and description
+    @Query("SELECT r FROM Request r WHERE LOWER(r.clubName) = LOWER(:clubName) AND LOWER(r.description) = LOWER(:description)")
+    List<Request> findByClubNameAndDescription(@Param("clubName") String clubName, @Param("description") String description);
 }

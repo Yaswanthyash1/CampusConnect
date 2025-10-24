@@ -479,4 +479,62 @@ public class RequestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
+
+    /**
+     * Endpoint to mark requests as completed when a project or event is created
+     * This is called by project-service and event-service
+     */
+    @PostMapping("/api/requests/mark-completed")
+    @ResponseBody
+    public ResponseEntity<String> markRequestsCompleted(@RequestBody Map<String, String> data) {
+        try {
+            String clubName = data.get("clubName");
+            String description = data.get("description");
+
+            logger.info("Received request to mark requests as completed: clubName={}, description={}", clubName, description);
+
+            if (clubName == null || description == null) {
+                return ResponseEntity.badRequest().body("clubName and description are required");
+            }
+
+            requestService.markRequestsAsCompleted(clubName, description);
+            return ResponseEntity.ok("Requests marked as completed successfully");
+        } catch (Exception e) {
+            logger.error("Error marking requests as completed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error marking requests as completed");
+        }
+    }
+
+    /**
+     * Utility endpoint to sync all existing requests with projects and events
+     * This will check all accepted requests and mark them as completed if matching projects/events exist
+     */
+    @PostMapping("/api/requests/sync-completed")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> syncCompletedRequests() {
+        try {
+            logger.info("Manual sync requested via API endpoint");
+            int markedCount = requestService.syncAllAcceptedRequests();
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("markedAsCompleted", markedCount);
+            result.put("message", "Sync completed successfully");
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Error syncing completed requests: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Error syncing completed requests: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    /**
+     * Simple GET endpoint to trigger sync - can be called from browser
+     */
+    @GetMapping("/api/requests/sync-completed")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> syncCompletedRequestsGet() {
+        return syncCompletedRequests();
+    }
 }

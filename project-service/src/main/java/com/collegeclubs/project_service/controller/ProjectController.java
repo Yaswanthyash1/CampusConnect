@@ -131,14 +131,41 @@ public class ProjectController {
 
             if (savedProject != null) {
                 logger.info("Project created successfully with ID: {}", savedProject.getId());
+                logger.info("Project details - clubName: '{}', projectName: '{}'", savedProject.getClubName(), savedProject.getProjectName());
                 redirectAttributes.addFlashAttribute("success", "Project '" + projectName + "' created successfully!");
 
-                // If this project was created from a request, mark that request as completed
+                // Mark all matching requests as completed (clubName matches and description matches projectName)
+                try {
+                    org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                    String requestServiceUrl = "http://localhost:8083/api/requests/mark-completed";
+
+                    Map<String, String> requestData = new HashMap<>();
+                    requestData.put("clubName", savedProject.getClubName());
+                    requestData.put("description", savedProject.getProjectName());
+
+                    logger.info("=== CALLING REQUEST SERVICE TO MARK COMPLETED ===");
+                    logger.info("Sending: clubName='{}', description='{}'", savedProject.getClubName(), savedProject.getProjectName());
+                    logger.info("URL: {}", requestServiceUrl);
+
+                    org.springframework.http.ResponseEntity<String> response = restTemplate.postForEntity(
+                        requestServiceUrl, requestData, String.class);
+
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        logger.info("Successfully called request service. Response: {}", response.getBody());
+                    } else {
+                        logger.warn("Failed to mark matching requests as completed: {}", response.getStatusCode());
+                    }
+                } catch (Exception e) {
+                    logger.error("Error marking matching requests as completed: {}", e.getMessage(), e);
+                    // Don't fail the project creation if request update fails
+                }
+
+                // If this project was created from a specific request, mark that request as completed too
                 if (fromRequest != null && !fromRequest.isEmpty()) {
                     try {
                         Long requestId = Long.parseLong(fromRequest);
                         org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-                        String requestServiceUrl = "http://localhost:8084/request-service/update-request-status";
+                        String requestServiceUrl = "http://localhost:8083/update-request-status";
 
                         Map<String, Object> requestData = new HashMap<>();
                         requestData.put("requestId", requestId);
@@ -328,6 +355,37 @@ public class ProjectController {
         payload.put("pastProjects", pastProjects);
 
         return ResponseEntity.ok(payload);
+    }
+
+    /**
+     * API endpoint to search for projects by clubName and projectName
+     * Used by request-service to check if matching projects exist
+     */
+    @GetMapping("/api/projects/search")
+    @ResponseBody
+    public ResponseEntity<List<Project>> searchProjectsByClubAndName(
+            @RequestParam("clubName") String clubName,
+            @RequestParam("projectName") String projectName) {
+        try {
+            logger.info("Searching for projects: clubName={}, projectName={}", clubName, projectName);
+
+            List<Project> allProjects = projectService.getProjectsByClubName(clubName);
+            List<Project> matchingProjects = new ArrayList<>();
+
+            // Case-insensitive matching
+            for (Project project : allProjects) {
+                if (project.getProjectName() != null &&
+                    project.getProjectName().equalsIgnoreCase(projectName)) {
+                    matchingProjects.add(project);
+                }
+            }
+
+            logger.info("Found {} matching projects", matchingProjects.size());
+            return ResponseEntity.ok(matchingProjects);
+        } catch (Exception e) {
+            logger.error("Error searching projects", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>());
+        }
     }
 }
 
