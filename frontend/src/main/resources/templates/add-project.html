@@ -61,6 +61,8 @@
     <div style="color: red; text-align: center; margin-bottom: 10px;" th:if="${error}">[[${error}]]</div>
 
     <form enctype="multipart/form-data" method="post" th:action="@{/addProject}">
+        <!-- carry originating request id so we can mark it completed after creating the project -->
+        <input type="hidden" id="fromRequest" name="fromRequest" value="" />
         <div class="form-group">
             <label for="clubname">Club Name:</label>
             <input id="clubname" name="clubname" placeholder="Enter club name" required type="text">
@@ -206,6 +208,9 @@
     if (fromRequest) {
         // You can add logic here to fetch and pre-fill data from the request
         console.log('Creating project from request:', fromRequest);
+        // set hidden form field so server can mark the original request completed after success
+        const fr = document.getElementById('fromRequest');
+        if (fr) fr.value = fromRequest;
     }
 </script>
 </body>

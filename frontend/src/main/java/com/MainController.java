@@ -110,6 +110,7 @@ public class MainController {
                                @RequestParam(value = "mentor", required = false) String mentor,
                                @RequestParam("status") String status,
                                @RequestParam(value = "attachments", required = false) MultipartFile[] attachments,
+                               @RequestParam(value = "fromRequest", required = false) String fromRequest,
                                RedirectAttributes redirectAttributes) {
         try {
             String projectServiceUrl = projectServiceBaseUrl + "/addProject";
@@ -162,6 +163,30 @@ public class MainController {
             // Treat 2xx and 3xx as success (project created / redirect). Otherwise show error.
             if (response.getStatusCode().is2xxSuccessful() || response.getStatusCode().is3xxRedirection()) {
                 redirectAttributes.addFlashAttribute("success", "Project created successfully!");
+
+                // If this project was created from a request, mark that request as completed
+                if (fromRequest != null && !fromRequest.trim().isEmpty()) {
+                    try {
+                        Long requestId = Long.parseLong(fromRequest);
+                        Map<String, Object> completeData = new HashMap<>();
+                        completeData.put("requestId", requestId);
+                        completeData.put("action", "complete");
+                        completeData.put("is_completed", 1);
+
+                        String completeUrl = requestServiceUrl + "/update-request-status";
+                        ResponseEntity<String> completeResp = restTemplate.postForEntity(completeUrl, completeData, String.class);
+
+                        if (completeResp.getStatusCode().is2xxSuccessful()) {
+                            System.out.println("Successfully marked request " + requestId + " as completed after project creation");
+                        } else {
+                            System.err.println("Failed to mark request " + requestId + " as completed: " + completeResp.getBody());
+                        }
+                    } catch (NumberFormatException e) {
+                        System.err.println("Invalid fromRequest ID: " + fromRequest);
+                    } catch (Exception e) {
+                        System.err.println("Error marking request as completed: " + e.getMessage());
+                    }
+                }
             } else {
                 redirectAttributes.addFlashAttribute("error", "Failed to create project. Please try again.");
             }

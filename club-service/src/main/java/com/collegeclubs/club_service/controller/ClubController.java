@@ -274,6 +274,7 @@ public class ClubController {
             @RequestParam("registrationlink") String registrationLink,
             @RequestParam(value = "banner", required = false) MultipartFile banner,
             @RequestParam(value = "requestId", required = false) Long requestId,
+            @RequestParam(value = "fromRequest", required = false) String fromRequest,
             Model model) {
 
         System.out.println("=== Event Creation Started ===");
@@ -286,6 +287,7 @@ public class ClubController {
         System.out.println("Budget: " + budget);
         System.out.println("Registration Link: " + registrationLink);
         System.out.println("Banner: " + (banner != null ? banner.getOriginalFilename() : "null"));
+        System.out.println("From Request: " + fromRequest);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
         LocalDateTime parsedTimestamp = LocalDateTime.parse(timestamp, formatter);
         byte[] bannerBytes = null;
@@ -303,7 +305,33 @@ public class ClubController {
                     Timestamp.valueOf(parsedTimestamp), budget, registrationLink, bannerBytes);
             if (result > 0) {
                 model.addAttribute("success", "Event created successfully!");
-                // TODO: Update request status via microservice call if needed
+
+                // If this event was created from a request, mark that request as completed
+                if (fromRequest != null && !fromRequest.isEmpty()) {
+                    try {
+                        Long reqId = Long.parseLong(fromRequest);
+                        org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                        String requestServiceUrl = "http://localhost:8084/request-service/update-request-status";
+
+                        java.util.Map<String, Object> requestData = new java.util.HashMap<>();
+                        requestData.put("requestId", reqId);
+                        requestData.put("action", "complete");
+
+                        System.out.println("Marking request " + reqId + " as completed after event creation");
+                        org.springframework.http.ResponseEntity<String> response = restTemplate.postForEntity(
+                            requestServiceUrl, requestData, String.class);
+
+                        if (response.getStatusCode().is2xxSuccessful()) {
+                            System.out.println("Successfully marked request " + reqId + " as completed");
+                        } else {
+                            System.out.println("Failed to mark request " + reqId + " as completed: " + response.getStatusCode());
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error marking request as completed: " + e.getMessage());
+                        e.printStackTrace();
+                        // Don't fail the event creation if request update fails
+                    }
+                }
             } else {
                 model.addAttribute("error", "Event creation failed. Please try again.");
             }

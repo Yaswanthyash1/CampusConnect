@@ -44,6 +44,7 @@
     <div style="color: green; text-align: center; margin-bottom: 10px;" th:if="${success}">[[${success}]]</div>
     <div style="color: red; text-align: center; margin-bottom: 10px;" th:if="${error}">[[${error}]]</div>
     <form enctype="multipart/form-data" method="post" th:action="@{/addEvent}">
+        <input type="hidden" id="fromRequest" name="fromRequest" value="" />
         <label for="clubname">Club Name:</label>
         <input id="clubname" name="clubname" required type="text">
 
@@ -75,5 +76,15 @@
     </form>
 
 </div>
+<script>
+    // carry originating request id so server can mark request completed after event creation
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromRequest = urlParams.get('fromRequest');
+    if (fromRequest) {
+        const fr = document.getElementById('fromRequest');
+        if (fr) fr.value = fromRequest;
+        console.log('Creating event from request:', fromRequest);
+    }
+</script>
 </body>
 </html>

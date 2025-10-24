@@ -67,10 +67,11 @@ public class ProjectController {
                              @RequestParam(value = "mentor", required = false) String mentor,
                              @RequestParam("status") String status,
                              @RequestParam(value = "attachments", required = false) MultipartFile[] attachments,
+                             @RequestParam(value = "fromRequest", required = false) String fromRequest,
                              RedirectAttributes redirectAttributes) {
 
         try {
-            logger.info("Received project creation request: {}", projectName);
+            logger.info("Received project creation request: {} (fromRequest: {})", projectName, fromRequest);
 
             // Create project object
             Project project = new Project();
@@ -131,6 +132,32 @@ public class ProjectController {
             if (savedProject != null) {
                 logger.info("Project created successfully with ID: {}", savedProject.getId());
                 redirectAttributes.addFlashAttribute("success", "Project '" + projectName + "' created successfully!");
+
+                // If this project was created from a request, mark that request as completed
+                if (fromRequest != null && !fromRequest.isEmpty()) {
+                    try {
+                        Long requestId = Long.parseLong(fromRequest);
+                        org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                        String requestServiceUrl = "http://localhost:8084/request-service/update-request-status";
+
+                        Map<String, Object> requestData = new HashMap<>();
+                        requestData.put("requestId", requestId);
+                        requestData.put("action", "complete");
+
+                        logger.info("Marking request {} as completed after project creation", requestId);
+                        org.springframework.http.ResponseEntity<String> response = restTemplate.postForEntity(
+                            requestServiceUrl, requestData, String.class);
+
+                        if (response.getStatusCode().is2xxSuccessful()) {
+                            logger.info("Successfully marked request {} as completed", requestId);
+                        } else {
+                            logger.warn("Failed to mark request {} as completed: {}", requestId, response.getStatusCode());
+                        }
+                    } catch (Exception e) {
+                        logger.error("Error marking request as completed: {}", e.getMessage(), e);
+                        // Don't fail the project creation if request update fails
+                    }
+                }
             } else {
                 logger.error("Failed to save project");
                 redirectAttributes.addFlashAttribute("error", "Failed to create project. Please try again.");
