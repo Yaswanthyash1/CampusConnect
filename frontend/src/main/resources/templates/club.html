@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <!-- CSRF meta tags (Spring Security) - JS will read these if present -->
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <title>Club Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=League+Spartan&display=swap" rel="stylesheet">
     <link href="/css/app.css" rel="stylesheet">
@@ -364,8 +367,9 @@
                             <td th:text="${req['type']} ?: '-'">Type</td>
                             <td th:text="${#dates.format(req['createdAt'], 'dd MMM yyyy HH:mm')} ?: '-'">Date</td>
                             <td>
-                                <form th:action="@{'/club-service/api/club/' + ${club.clubName} + '/requests'}" method="post" style="display:inline;">
+                                <form class="request-action-form" th:action="@{'/club/' + ${club.clubName} + '/requests'}" method="post" style="display:inline;">
                                     <input type="hidden" name="requestId" th:value="${req['id']}" />
+                                    <!-- Keep buttons with name=action so non-JS fallback still works -->
                                     <button class="nav-btn" name="action" value="accept" type="submit">Approve</button>
                                     <button class="nav-btn" name="action" value="reject" type="submit">Reject</button>
                                 </form>
@@ -423,15 +427,134 @@
             setTimeout(function() { t.remove(); }, 300);
         }, 2200);
     }
-</script>
 
-<script th:inline="javascript">
-        /* Ensure members section is displayed on page load */
-        window.addEventListener('DOMContentLoaded', function() {
-            if (window.location.pathname.endsWith('/club-head/members')) {
-                showContent('members');
+    // Delegate submit of pending request forms (Approve / Reject) to do AJAX and show toast + remove row
+    document.addEventListener('submit', function (e) {
+        const form = e.target && e.target.closest && e.target.closest('.request-action-form');
+        if (!form) return;
+        e.preventDefault();
+
+        // Determine action: prefer the button that triggered submit (e.submitter) if available
+        const submitter = e.submitter || document.activeElement;
+        let action = null;
+        if (submitter && submitter.getAttribute) action = submitter.getAttribute('value') || submitter.value;
+        if (!action) {
+            const actInput = form.querySelector('[name="action"]');
+            if (actInput) action = actInput.value;
+        }
+
+        const idInput = form.querySelector('input[name="requestId"]');
+        const requestId = idInput ? idInput.value : null;
+        const url = form.getAttribute('action') || window.location.pathname;
+
+        if (!action || !requestId) {
+            showToast('Invalid request data');
+            return;
+        }
+
+        const buttons = form.querySelectorAll('button');
+        buttons.forEach(b => b.disabled = true);
+
+        const payload = new URLSearchParams();
+        payload.append('requestId', requestId);
+        payload.append('action', action);
+
+        // headers: content-type, ajax detection, and optional CSRF
+        const headers = { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' };
+        const csrfMeta = document.querySelector('meta[name="_csrf"]');
+        if (csrfMeta) {
+            const csrfToken = csrfMeta.getAttribute('content');
+            const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+            const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : 'X-CSRF-TOKEN';
+            if (csrfToken) headers[csrfHeader] = csrfToken;
+        }
+
+        fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: payload.toString(),
+            redirect: 'follow'
+        }).then(function (response) {
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
+
+            function removeRow(tr) {
+                if (!tr) return;
+                const height = tr.offsetHeight + 'px';
+                tr.style.boxSizing = 'border-box';
+                tr.style.transition = 'opacity 0.25s ease, transform 0.25s ease, height 0.25s ease, padding 0.25s ease, margin 0.25s ease';
+                tr.style.height = height;
+                requestAnimationFrame(function() {
+                    tr.style.opacity = '0';
+                    tr.style.transform = 'translateX(-10px)';
+                    tr.style.height = '0';
+                    tr.style.paddingTop = '0';
+                    tr.style.paddingBottom = '0';
+                    tr.style.marginTop = '0';
+                    tr.style.marginBottom = '0';
+                });
+                setTimeout(function() {
+                    if (tr && tr.parentNode) {
+                        const tbody = tr.parentNode;
+                        tbody.removeChild(tr);
+                        if (tbody.querySelectorAll('tr').length === 0) {
+                            const colCount = document.querySelectorAll('table thead th').length || 1;
+                            const placeholder = document.createElement('tr');
+                            const td = document.createElement('td');
+                            td.colSpan = colCount;
+                            td.style.textAlign = 'center';
+                            td.style.padding = '20px';
+                            td.style.opacity = '0.9';
+                            td.textContent = 'No pending requests';
+                            placeholder.appendChild(td);
+                            tbody.appendChild(placeholder);
+                        }
+                    }
+                }, 300);
             }
+
+            if (contentType.indexOf('application/json') !== -1) {
+                return response.json().then(function (data) {
+                    if (response.ok) {
+                        const msg = data && data.message ? data.message : ('Request ' + (action === 'accept' ? 'accepted' : 'rejected') + ' successfully');
+                        showToast(msg);
+                        removeRow(form.closest('tr'));
+                    } else {
+                        const msg = data && data.message ? data.message : ('Failed to ' + action + ' (status ' + response.status + ')');
+                        showToast(msg);
+                        buttons.forEach(b => b.disabled = false);
+                    }
+                }).catch(function (err) {
+                    console.error('Error parsing JSON response:', err);
+                    if (response.ok) {
+                        showToast('Request ' + (action === 'accept' ? 'accepted' : 'rejected') + ' successfully');
+                        removeRow(form.closest('tr'));
+                    } else {
+                        showToast('Failed to ' + action + ' (status ' + response.status + ')');
+                        buttons.forEach(b => b.disabled = false);
+                    }
+                });
+            } else {
+                if (response.ok) {
+                    showToast('Request ' + (action === 'accept' ? 'accepted' : 'rejected') + ' successfully');
+                    removeRow(form.closest('tr'));
+                } else {
+                    showToast('Failed to ' + action + ' (status ' + response.status + ')');
+                    buttons.forEach(b => b.disabled = false);
+                }
+            }
+        }).catch(function (err) {
+            console.error('Error submitting request action:', err);
+            showToast('Error processing request');
+            buttons.forEach(b => b.disabled = false);
         });
-    </script>
+    });
+
+    /* Ensure members section is displayed on page load */
+    window.addEventListener('DOMContentLoaded', function() {
+        if (window.location.pathname.endsWith('/club-head/members')) {
+            showContent('members');
+        }
+    });
+</script>
 </body>
 </html>

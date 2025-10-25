@@ -806,9 +806,10 @@ public class MainController {
     }
 
     @PostMapping("/club/{clubName}/requests")
-    public String handleClubRequests(@PathVariable String clubName,
+    public org.springframework.http.ResponseEntity<?> handleClubRequests(@PathVariable String clubName,
             @RequestParam String action,
             @RequestParam(required = false) Long requestId,
+            jakarta.servlet.http.HttpServletRequest servletRequest,
             RedirectAttributes redirectAttributes) {
         try {
             System.out.println("DEBUG: Frontend handling club request for club: " + clubName +
@@ -836,22 +837,44 @@ public class MainController {
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 System.out.println("Successfully forwarded request to club-service");
+                // If this is an AJAX request, return JSON to the caller instead of redirecting
+                String requestedWith = servletRequest.getHeader("X-Requested-With");
+                if (requestedWith != null && "XMLHttpRequest".equalsIgnoreCase(requestedWith)) {
+                    java.util.Map<String, Object> body = new java.util.HashMap<>();
+                    body.put("success", true);
+                    body.put("message", "Request " + action + "ed successfully");
+                    return org.springframework.http.ResponseEntity.ok(body);
+                }
                 redirectAttributes.addFlashAttribute("successMessage",
                         "Request " + action + "ed successfully!");
             } else {
                 System.err.println("Error forwarding to club-service: " + response.getStatusCode());
+                if (servletRequest.getHeader("X-Requested-With") != null && "XMLHttpRequest".equalsIgnoreCase(servletRequest.getHeader("X-Requested-With"))) {
+                    java.util.Map<String, Object> body = new java.util.HashMap<>();
+                    body.put("success", false);
+                    body.put("message", "Failed to " + action + " request. Please try again.");
+                    return org.springframework.http.ResponseEntity.status(response.getStatusCode()).body(body);
+                }
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "Failed to " + action + " request. Please try again.");
             }
-
         } catch (Exception e) {
             System.err.println("Exception forwarding POST to club-service: " + e.getMessage());
             e.printStackTrace();
+            if (servletRequest.getHeader("X-Requested-With") != null && "XMLHttpRequest".equalsIgnoreCase(servletRequest.getHeader("X-Requested-With"))) {
+                java.util.Map<String, Object> body = new java.util.HashMap<>();
+                body.put("success", false);
+                body.put("message", "An error occurred while processing the request. Please try again.");
+                return org.springframework.http.ResponseEntity.status(500).body(body);
+            }
             redirectAttributes.addFlashAttribute("errorMessage",
                     "An error occurred while processing the request. Please try again.");
         }
 
-        return "redirect:/club/" + clubName + "/requests";
+        // Non-AJAX fallback: redirect to the requests page
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setLocation(java.net.URI.create("/club/" + clubName + "/requests"));
+        return new org.springframework.http.ResponseEntity<>(headers, org.springframework.http.HttpStatus.FOUND);
     }
 
     @GetMapping("/event")

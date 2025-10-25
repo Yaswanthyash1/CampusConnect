@@ -319,7 +319,7 @@
             </div>
 
             <div class="project-actions">
-                <a class="btn btn-primary" th:href="@{'/project-details/' + ${project.id}}">👁️ View Details</a>
+                <a class="btn btn-primary" th:href="@{|/project-details/${project.id}|}">👁️ View Details</a>
                 <button class="btn btn-secondary" th:onclick="|updateStatus(${project.id}, '${project.status}')|">📝 Update Status
                 </button>
                  </div>

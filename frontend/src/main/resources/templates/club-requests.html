@@ -68,15 +68,15 @@
                 <span th:if="${req.filePath == null or req.filePath == ''}">No file</span>
             </td>
             <td th:if="${isClubHead}">
-                <form method="post" style="display:inline-block;margin-right:6px;"
-                      th:action="@{'/club/' + ${clubName} + '/requests'}">
+                <form class="request-action-form" method="post" style="display:inline-block;margin-right:6px;"
+                      th:action="@{|/club/${clubName}/requests|}">
                     <input name="requestId" th:value="${req.id}" type="hidden"/>
                     <input name="action" type="hidden" value="accept"/>
                     <button class="nav-btn" style="background:green;color:white;padding:6px 10px;border-radius:6px;"
                             type="submit">Accept
                     </button>
                 </form>
-                <form method="post" style="display:inline-block;" th:action="@{'/club/' + ${clubName} + '/requests'}">
+                <form class="request-action-form" method="post" style="display:inline-block;" th:action="@{|/club/${clubName}/requests|}">
                     <input name="requestId" th:value="${req.id}" type="hidden"/>
                     <input name="action" type="hidden" value="reject"/>
                     <button class="nav-btn" style="background:#c0392b;color:white;padding:6px 10px;border-radius:6px;"
@@ -105,6 +105,125 @@
             }, 500);
         });
     }
+
+    // Delegate submit of request action forms and perform AJAX POST
+    document.addEventListener('submit', function (e) {
+        const form = e.target.closest && e.target.closest('.request-action-form');
+        if (!form) return; // not one of our forms
+        e.preventDefault();
+
+        // find inputs
+        const actionInput = form.querySelector('input[name="action"]');
+        const idInput = form.querySelector('input[name="requestId"]');
+        const action = actionInput ? actionInput.value : null;
+        const requestId = idInput ? idInput.value : null;
+        const url = form.getAttribute('action') || form.getAttribute('th:action') || window.location.pathname;
+
+        if (!action || !requestId) {
+            showToast('Invalid request data');
+            return;
+        }
+
+        // Disable buttons to prevent double submits
+        const buttons = form.querySelectorAll('button');
+        buttons.forEach(b => b.disabled = true);
+
+        const payload = new URLSearchParams();
+        payload.append('requestId', requestId);
+        payload.append('action', action);
+
+        // Build headers and include CSRF token if available (meta tags are commonly used with Spring Security)
+        const headers = { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' };
+        const csrfMeta = document.querySelector('meta[name="_csrf"]');
+        if (csrfMeta) {
+            const csrfToken = csrfMeta.getAttribute('content');
+            const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+            const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : 'X-CSRF-TOKEN';
+            if (csrfToken) headers[csrfHeader] = csrfToken;
+        }
+
+        fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: payload.toString(),
+            redirect: 'follow'
+        }).then(function (response) {
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
+
+            function removeRowWithAnimation(tr) {
+                if (!tr) return;
+                const height = tr.offsetHeight + 'px';
+                tr.style.boxSizing = 'border-box';
+                tr.style.transition = 'opacity 0.25s ease, transform 0.25s ease, height 0.25s ease, padding 0.25s ease, margin 0.25s ease';
+                tr.style.height = height;
+                requestAnimationFrame(function() {
+                    tr.style.opacity = '0';
+                    tr.style.transform = 'translateX(-10px)';
+                    tr.style.height = '0';
+                    tr.style.paddingTop = '0';
+                    tr.style.paddingBottom = '0';
+                    tr.style.marginTop = '0';
+                    tr.style.marginBottom = '0';
+                });
+                setTimeout(function() {
+                    if (tr && tr.parentNode) {
+                        const tbody = tr.parentNode;
+                        tbody.removeChild(tr);
+                        const remaining = tbody.querySelectorAll('tr').length;
+                        if (remaining === 0) {
+                            const colCount = document.querySelectorAll('table thead th').length || 1;
+                            const placeholder = document.createElement('tr');
+                            const td = document.createElement('td');
+                            td.colSpan = colCount;
+                            td.style.textAlign = 'center';
+                            td.style.padding = '20px';
+                            td.style.opacity = '0.9';
+                            td.textContent = 'No pending requests';
+                            placeholder.appendChild(td);
+                            tbody.appendChild(placeholder);
+                        }
+                    }
+                }, 300);
+            }
+
+            if (contentType.indexOf('application/json') !== -1) {
+                return response.json().then(function (data) {
+                    if (response.ok) {
+                        const msg = data && data.message ? data.message : ('Request ' + (action === 'accept' ? 'accepted' : 'rejected') + ' successfully');
+                        showToast(msg);
+                        const tr = form.closest('tr');
+                        removeRowWithAnimation(tr);
+                    } else {
+                        const msg = data && data.message ? data.message : ('Failed to ' + action + ' (status ' + response.status + ')');
+                        showToast(msg);
+                        buttons.forEach(b => b.disabled = false);
+                    }
+                }).catch(function (err) {
+                    console.error('Error parsing JSON response:', err);
+                    if (response.ok) {
+                        showToast('Request ' + (action === 'accept' ? 'accepted' : 'rejected') + ' successfully');
+                        removeRowWithAnimation(form.closest('tr'));
+                    } else {
+                        showToast('Failed to ' + action + ' (status ' + response.status + ')');
+                        buttons.forEach(b => b.disabled = false);
+                    }
+                });
+            } else {
+                // Non-JSON response
+                if (response.ok) {
+                    showToast('Request ' + (action === 'accept' ? 'accepted' : 'rejected') + ' successfully');
+                    removeRowWithAnimation(form.closest('tr'));
+                } else {
+                    showToast('Failed to ' + action + ' (status ' + response.status + ')');
+                    buttons.forEach(b => b.disabled = false);
+                }
+            }
+        }).catch(function (err) {
+            console.error('Error submitting request action:', err);
+            showToast('Error processing request');
+            buttons.forEach(b => b.disabled = false);
+        });
+    });
 
     // Toast notification helper function
     function showToast(message) {

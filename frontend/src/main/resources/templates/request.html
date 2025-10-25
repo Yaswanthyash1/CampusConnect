@@ -228,7 +228,7 @@
                 form.reset();
                 setTimeout(() => {
                     hideForm();
-                }, 2000);
+                }, 500);
             } else {
                 return response.text().then(text => {
                     throw new Error(text || 'Failed to submit request');
@@ -329,7 +329,7 @@
             t.style.opacity = '0';
             t.style.transform = 'translateX(-50%) translateY(-6px)';
             setTimeout(function() { t.remove(); }, 300);
-        }, 2200);
+        }, 500);
     }
 
     function showErrorToast(message) {
@@ -356,7 +356,7 @@
             t.style.opacity = '0';
             t.style.transform = 'translateX(-50%) translateY(-6px)';
             setTimeout(function() { t.remove(); }, 300);
-        }, 2200);
+        }, 500);
     }
 </script>
 </body>

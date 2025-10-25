@@ -223,29 +223,31 @@
             <span class="label">Registration</span>
             <div class="value">
                 <!-- Show "Register Now" if upcoming event and has registration link -->
-                <a class="btn btn-primary" target="_blank"
+
                    th:href="${registrationLink}"
                    th:if="${isUpcoming} and ${registrationLink != null and registrationLink != ''}">
+                   th:href="${event.registrationLink}"
+                   th:if="${isUpcoming} and !${isClubHead} and ${event.registrationLink}">
                     Register Now
-                </a>
-
-                <!-- Show "Closed" if upcoming but no link -->
-                <span class="status-badge status-closed"
+                      th:if="${isUpcoming} and !${isClubHead} and (event.registrationLink == null or event.registrationLink == '')">
+            Closed
                       th:if="${isUpcoming} and (${registrationLink == null or registrationLink == ''})">
                     Closed
                 </span>
-
-                <!-- For past events -->
-                <span class="status-badge status-closed" th:if="${!isUpcoming}">
+            Closed
+            Registration Closed
+        </span>
                     Registration Closed
                 </span>
+            Registration Closed
+        </span>
             </div>
         </div>
-
+        <a class="btn btn-primary" href="/events">← Back </a>
     </div>
-
-    <div class="back-section">
         <a class="btn btn-primary" href="/events-dashboard">← Back to Events</a>
+    <div class="back-section">
+        <a class="btn btn-primary" href="/events">← Back </a>
     </div>
 </div>
 
