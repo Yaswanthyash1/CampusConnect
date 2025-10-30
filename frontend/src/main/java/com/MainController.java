@@ -773,9 +773,38 @@ public class MainController {
             e.printStackTrace();
         }
 
+        // Fetch upcoming events for this club from event-service
+        java.util.List<java.util.Map<String, Object>> clubEvents = new java.util.ArrayList<>();
+        try {
+            String eventsUrl = eventServiceUrl + "/events/upcoming";
+            ResponseEntity<java.util.List<java.util.Map<String, Object>>> eventsResponse = restTemplate.exchange(
+                    eventsUrl,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<java.util.Map<String, Object>>>() {
+                    });
+
+            if (eventsResponse.getStatusCode().is2xxSuccessful() && eventsResponse.getBody() != null) {
+                // Filter events for this specific club
+                for (java.util.Map<String, Object> event : eventsResponse.getBody()) {
+                    String eventClub = (String) event.get("clubName");
+                    if (clubName.equalsIgnoreCase(eventClub)) {
+                        // Convert timestamp to Date for Thymeleaf
+                        convertDateFieldsIfNeeded(event, "timestamp");
+                        clubEvents.add(event);
+                    }
+                }
+                System.out.println("DEBUG: Found " + clubEvents.size() + " upcoming events for club: " + clubName);
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to fetch club events: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         model.addAttribute("members", members);
         model.addAttribute("clubName", clubName);
-        System.out.println("DEBUG: Returning club view with " + members.size() + " members");
+        model.addAttribute("clubEvents", clubEvents);
+        System.out.println("DEBUG: Returning club view with " + members.size() + " members and " + clubEvents.size() + " events");
 
         return "club";
     }
@@ -806,10 +835,9 @@ public class MainController {
     }
 
     @PostMapping("/club/{clubName}/requests")
-    public org.springframework.http.ResponseEntity<?> handleClubRequests(@PathVariable String clubName,
+    public String handleClubRequests(@PathVariable String clubName,
             @RequestParam String action,
             @RequestParam(required = false) Long requestId,
-            jakarta.servlet.http.HttpServletRequest servletRequest,
             RedirectAttributes redirectAttributes) {
         try {
             System.out.println("DEBUG: Frontend handling club request for club: " + clubName +
@@ -837,44 +865,22 @@ public class MainController {
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 System.out.println("Successfully forwarded request to club-service");
-                // If this is an AJAX request, return JSON to the caller instead of redirecting
-                String requestedWith = servletRequest.getHeader("X-Requested-With");
-                if (requestedWith != null && "XMLHttpRequest".equalsIgnoreCase(requestedWith)) {
-                    java.util.Map<String, Object> body = new java.util.HashMap<>();
-                    body.put("success", true);
-                    body.put("message", "Request " + action + "ed successfully");
-                    return org.springframework.http.ResponseEntity.ok(body);
-                }
                 redirectAttributes.addFlashAttribute("successMessage",
                         "Request " + action + "ed successfully!");
             } else {
                 System.err.println("Error forwarding to club-service: " + response.getStatusCode());
-                if (servletRequest.getHeader("X-Requested-With") != null && "XMLHttpRequest".equalsIgnoreCase(servletRequest.getHeader("X-Requested-With"))) {
-                    java.util.Map<String, Object> body = new java.util.HashMap<>();
-                    body.put("success", false);
-                    body.put("message", "Failed to " + action + " request. Please try again.");
-                    return org.springframework.http.ResponseEntity.status(response.getStatusCode()).body(body);
-                }
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "Failed to " + action + " request. Please try again.");
             }
+
         } catch (Exception e) {
             System.err.println("Exception forwarding POST to club-service: " + e.getMessage());
             e.printStackTrace();
-            if (servletRequest.getHeader("X-Requested-With") != null && "XMLHttpRequest".equalsIgnoreCase(servletRequest.getHeader("X-Requested-With"))) {
-                java.util.Map<String, Object> body = new java.util.HashMap<>();
-                body.put("success", false);
-                body.put("message", "An error occurred while processing the request. Please try again.");
-                return org.springframework.http.ResponseEntity.status(500).body(body);
-            }
             redirectAttributes.addFlashAttribute("errorMessage",
                     "An error occurred while processing the request. Please try again.");
         }
 
-        // Non-AJAX fallback: redirect to the requests page
-        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-        headers.setLocation(java.net.URI.create("/club/" + clubName + "/requests"));
-        return new org.springframework.http.ResponseEntity<>(headers, org.springframework.http.HttpStatus.FOUND);
+        return "redirect:/club/" + clubName + "/requests";
     }
 
     @GetMapping("/event")
@@ -921,17 +927,6 @@ public class MainController {
             java.util.List<java.util.Map<String, Object>> pastEvents = pastResponse.getStatusCode().is2xxSuccessful() && pastResponse.getBody() != null
                     ? pastResponse.getBody()
                     : java.util.Collections.emptyList();
-
-            // Convert timestamp fields to java.util.Date so Thymeleaf #dates.format works
-            try {
-                for (java.util.Map<String, Object> ev : upcomingEvents) {
-                    convertDateFieldsIfNeeded(ev, "timestamp");
-                }
-                for (java.util.Map<String, Object> ev : pastEvents) {
-                    convertDateFieldsIfNeeded(ev, "timestamp");
-                }
-            } catch (Exception ignored) {
-            }
 
             model.addAttribute("upcomingEvents", upcomingEvents);
             model.addAttribute("pastEvents", pastEvents);
@@ -1029,6 +1024,7 @@ public class MainController {
 
                     boolean clubMatch = (clubName != null && requestClub != null &&
                             requestClub.trim().equalsIgnoreCase(clubName.trim()));
+                    boolean isPending = (status != null && status.trim().equalsIgnoreCase("pending"));
                     // treat null as not completed. If field present, interpret boolean/number/string properly
                     boolean isNotCompleted;
                     if (isCompletedObj == null) {
@@ -1044,7 +1040,7 @@ public class MainController {
                     boolean isAcceptedAndNotCompleted = (status != null && status.trim().equalsIgnoreCase("accepted")
                             && isNotCompleted);
 
-                    if (clubMatch && isAcceptedAndNotCompleted) {
+                    if (clubMatch && (isPending || isAcceptedAndNotCompleted)) {
                         if (type != null) {
                             if (type.equalsIgnoreCase("idea")) {
                                 ideas.add(request);
@@ -1091,136 +1087,6 @@ public class MainController {
         }
 
         return "pending-tasks";
-    }
-
-    /**
-     * Show request details page
-     * Fetches the request from request-service and displays it
-     */
-    @GetMapping("/request-details/{id}")
-    public String showRequestDetails(@PathVariable("id") Long id, Model model, HttpSession session) {
-        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
-
-        if (isAuthenticated == null || !isAuthenticated) {
-            return "redirect:/login";
-        }
-
-        try {
-            // Fetch request details from request-service
-            String requestUrl = "http://localhost:8083/request/" + id;
-            ResponseEntity<Map> response = restTemplate.getForEntity(requestUrl, Map.class);
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Map<String, Object> requestData = response.getBody();
-                model.addAttribute("requestData", requestData);
-
-                // Add user-friendly attribute names for Thymeleaf
-                model.addAttribute("requestId", requestData.get("id"));
-                model.addAttribute("memberId", requestData.getOrDefault("memberId", requestData.get("member_id")));
-                model.addAttribute("type", requestData.get("type"));
-                model.addAttribute("description", requestData.get("description"));
-                model.addAttribute("status", requestData.get("status"));
-                model.addAttribute("timestamp", requestData.get("timestamp"));
-                model.addAttribute("clubName", requestData.get("clubName"));
-                model.addAttribute("filePath", requestData.get("filePath"));
-                model.addAttribute("fileName", requestData.getOrDefault("fileName", requestData.get("file_path")));
-
-                Object isCompletedObj = requestData.getOrDefault("isCompleted", requestData.get("is_completed"));
-                boolean isCompleted = false;
-                if (isCompletedObj instanceof Boolean) {
-                    isCompleted = (Boolean) isCompletedObj;
-                } else if (isCompletedObj instanceof Number) {
-                    isCompleted = ((Number) isCompletedObj).intValue() == 1;
-                } else if (isCompletedObj != null) {
-                    isCompleted = "1".equals(isCompletedObj.toString()) || "true".equalsIgnoreCase(isCompletedObj.toString());
-                }
-                model.addAttribute("isCompleted", isCompleted);
-
-                return "request-details";
-            } else {
-                System.err.println("Failed to fetch request details: " + response.getStatusCode());
-                return "redirect:/pending-tasks";
-            }
-        } catch (Exception e) {
-            System.err.println("Error fetching request details: " + e.getMessage());
-            e.printStackTrace();
-            return "redirect:/pending-tasks";
-        }
-    }
-
-    /**
-     * Show event details page
-     * Fetches the event from event-service and displays it
-     */
-    @GetMapping("/event-details/{id}")
-    public String showEventDetails(@PathVariable("id") Long id, Model model, HttpSession session) {
-        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
-
-        if (isAuthenticated == null || !isAuthenticated) {
-            return "redirect:/login";
-        }
-
-        try {
-            // Fetch event details from event-service
-            String eventUrl = "http://localhost:8085/events/all";
-            ResponseEntity<List> response = restTemplate.getForEntity(eventUrl, List.class);
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                List<Map<String, Object>> events = (List<Map<String, Object>>) response.getBody();
-
-                // Find the specific event by id
-                Map<String, Object> eventData = null;
-                for (Map<String, Object> evt : events) {
-                    Object evtId = evt.get("id");
-                    if (evtId != null && evtId.toString().equals(id.toString())) {
-                        eventData = evt;
-                        break;
-                    }
-                }
-
-                if (eventData == null) {
-                    System.err.println("Event with id=" + id + " not found");
-                    return "redirect:/events-dashboard";
-                }
-
-                model.addAttribute("eventData", eventData);
-
-                // Add user-friendly attribute names for Thymeleaf
-                model.addAttribute("eventId", eventData.get("id"));
-                model.addAttribute("clubName", eventData.get("clubName"));
-                model.addAttribute("eventName", eventData.get("eventName"));
-                model.addAttribute("description", eventData.get("description"));
-                model.addAttribute("venue", eventData.get("venue"));
-                model.addAttribute("type", eventData.get("type"));
-                model.addAttribute("budget", eventData.get("budget"));
-                model.addAttribute("registrationLink", eventData.get("registrationLink"));
-
-                // Handle timestamp and determine if event is upcoming
-                Object timestampObj = eventData.get("timestamp");
-                model.addAttribute("timestamp", timestampObj);
-
-                boolean isUpcoming = false;
-                if (timestampObj != null) {
-                    try {
-                        long timestampMillis = Long.parseLong(timestampObj.toString());
-                        long nowMillis = System.currentTimeMillis();
-                        isUpcoming = timestampMillis > nowMillis;
-                    } catch (Exception e) {
-                        System.err.println("Error parsing timestamp: " + e.getMessage());
-                    }
-                }
-                model.addAttribute("isUpcoming", isUpcoming);
-
-                return "event-details";
-            } else {
-                System.err.println("Failed to fetch events: " + response.getStatusCode());
-                return "redirect:/events-dashboard";
-            }
-        } catch (Exception e) {
-            System.err.println("Error fetching event details: " + e.getMessage());
-            e.printStackTrace();
-            return "redirect:/events-dashboard";
-        }
     }
 
     // Show processed (accepted/rejected) requests for a club
