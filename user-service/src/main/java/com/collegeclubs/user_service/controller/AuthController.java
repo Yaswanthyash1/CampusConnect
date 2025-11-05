@@ -52,11 +52,9 @@ public class AuthController {
 
         System.out.println("UserType: " + userType);
         System.out.println("Full payload: " + payload);
-
         try {
             boolean isValid = false;
             String role = "";
-
             if ("member".equalsIgnoreCase(userType)) {
                 identifier = (String) payload.get("srn");
                 System.out.println("Member login - SRN identifier: " + identifier);
@@ -73,23 +71,27 @@ public class AuthController {
                 resp.put("userIdentifier", identifier);
             } else if ("club".equalsIgnoreCase(userType) || "clubHead".equalsIgnoreCase(userType)) {
                 identifier = (String) payload.get("clubName");
-                System.out.println("Attempting club login with clubName: " + identifier);
+                System.out.println("Attempting clubHead login with clubName: " + identifier + ", password: " + password);
                 isValid = userService.validateClub(identifier, password);
+                System.out.println("clubHead login validation result for clubName '" + identifier + "': " + isValid);
                 role = "clubHead";
                 resp.put("userIdentifier", identifier);
             } else {
+                System.out.println("Invalid userType received: " + userType);
                 resp.put("error", "Invalid user type");
                 return ResponseEntity.badRequest().body(resp);
             }
-
             if (isValid) {
+                System.out.println("Login successful for userType: " + userType + ", identifier: " + identifier);
                 resp.put("role", role);
                 return ResponseEntity.ok(resp);
             } else {
+                System.out.println("Login failed for userType: " + userType + ", identifier: " + identifier);
                 resp.put("error", "Invalid credentials");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
             }
         } catch (Exception e) {
+            System.err.println("Exception during login: " + e.getMessage());
             resp.put("error", "Login failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(resp);
         }

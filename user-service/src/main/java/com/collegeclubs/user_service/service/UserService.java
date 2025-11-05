@@ -139,23 +139,17 @@ public class UserService {
     public boolean validateClub(String identifier, String password) {
         System.out.println("Validating club login for: " + identifier + " with password: " + password);
         try {
-            // Connect directly to clubdb for club validation
-            String clubDbUrl = "jdbc:mysql://localhost:3306/clubdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
-
-            // Create a separate JdbcTemplate for clubdb
+            String clubDbUrl = "jdbc:mysql://host.docker.internal:3306/clubdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
             org.springframework.jdbc.datasource.DriverManagerDataSource dataSource = new org.springframework.jdbc.datasource.DriverManagerDataSource();
             dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
             dataSource.setUrl(clubDbUrl);
             dataSource.setUsername("clubuser");
             dataSource.setPassword("clubpass");
-
-            org.springframework.jdbc.core.JdbcTemplate clubJdbcTemplate = new org.springframework.jdbc.core.JdbcTemplate(
-                    dataSource);
-
-            // Query clubdb.club table
+            org.springframework.jdbc.core.JdbcTemplate clubJdbcTemplate = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
             String sql = "SELECT COUNT(*) FROM club WHERE clubName = ? AND password = ?";
+            System.out.println("Executing SQL: " + sql + " with clubName='" + identifier + "', password='" + password + "'");
             Integer count = clubJdbcTemplate.queryForObject(sql, Integer.class, identifier, password);
-
+            System.out.println("Club validation query result count: " + count);
             System.out.println("Club validation result: " + (count != null && count > 0));
             return count != null && count > 0;
         } catch (Exception e) {

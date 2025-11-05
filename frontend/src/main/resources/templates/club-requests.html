@@ -62,7 +62,7 @@
             <td th:text="${req.timestamp != null ? req.timestamp : 'N/A'}"></td>
             <td>
                 <a class="download-link" target="_blank"
-                   th:href="@{/request/file/{id}(id=${req.id})}"
+                   th:href="@{/download/{filename}(filename=${req.filePath})}"
                    th:if="${req.filePath != null and req.filePath != ''}"
                    th:text="${req.fileName != null ? req.fileName : 'Download'}">Download</a>
                 <span th:if="${req.filePath == null or req.filePath == ''}">No file</span>

@@ -263,7 +263,7 @@
             <div class="file-info">
                 <div class="file-name" th:text="${fileName}">File Name</div>
                 <div class="file-path" th:text="${filePath}">File Path</div>
-                <a class="btn btn-secondary" style="margin-top: 10px;" th:href="@{'/request/file/' + ${requestId}}">
+                <a class="btn btn-secondary" style="margin-top: 10px;" th:href="@{/download/{filename}(filename=${requestAttachment})}" th:if="${requestAttachment}">
                     📁 Download File
                 </a>
             </div>

@@ -188,6 +188,17 @@ public class RequestController {
         }
     }
 
+    @GetMapping("/api/request/{id}")
+    @ResponseBody
+    public ResponseEntity<Request> getRequestByIdApi(@PathVariable Long id) {
+        Optional<Request> request = requestService.getRequestById(id);
+        if (request.isPresent()) {
+            return ResponseEntity.ok(request.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/request/file/{id}")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
         Optional<Request> opt = requestService.getRequestById(id);

@@ -333,7 +333,7 @@
                 <span class="attachment-name" th:text="${#strings.substringAfter(attachment, '_')}">Document</span>
                 <a class="btn btn-secondary"
                    style="padding: 4px 12px; font-size: 12px;"
-                   th:href="@{/project/download/{projectId}/{fileIndex}(projectId=${project.id},fileIndex=${attachmentStat.index})}">Download</a>
+                   th:href="@{/download/{filename}(filename=${attachment})}">Download</a>
             </div>
          </div>
      </div>

@@ -301,7 +301,7 @@
                 <div class="event-meta">
                     <p><strong>📍</strong> <span th:text="${event.location}">Location</span></p>
                     <p><strong>📅</strong> <span
-                            th:text="${#dates.format(event.timestamp,'dd MMM yyyy HH:mm')}">Date</span></p>
+                            th:text="${event.timestamp instanceof T(java.util.Date) ? #dates.format(event.timestamp,'dd MMM yyyy HH:mm') : (event.timestamp != null ? event.timestamp : 'N/A')}">Date</span></p>
                     <p><strong>💰</strong> ₹<span th:text="${event.budget}">Budget</span></p>
                 </div>
 
@@ -340,7 +340,7 @@
                 <div class="event-meta">
                     <p><strong>📍</strong> <span th:text="${event.location}">Location</span></p>
                     <p><strong>📅</strong> <span
-                            th:text="${#dates.format(event.timestamp,'dd MMM yyyy HH:mm')}">Date</span></p>
+                            th:text="${event.timestamp instanceof T(java.util.Date) ? #dates.format(event.timestamp,'dd MMM yyyy HH:mm') : (event.timestamp != null ? event.timestamp : 'N/A')}">Date</span></p>
                     <p><strong>💰</strong> ₹<span th:text="${event.budget}">Budget</span></p>
                 </div>
 

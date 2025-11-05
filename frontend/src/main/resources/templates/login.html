@@ -41,7 +41,6 @@
             <option value="">Select User Type</option>
             <option value="member">Member</option>
             <option value="clubHead">Club Head</option>
-            <option value="faculty">Faculty</option>
         </select>
         <div id="srnField">
             <input id="srn" name="srn" placeholder="SRN" type="text">
@@ -106,6 +105,7 @@
             loginData.email = facultyEmail;
         }
 
+        console.log('Login payload being sent:', loginData);
         try {
             const response = await fetch('/login', {
                 method: 'POST',
@@ -114,10 +114,11 @@
                 },
                 body: JSON.stringify(loginData) // Convert loginData to JSON string
             });
-
+            console.log('Login response status:', response.status);
             if (response.ok) {
                 let data = null;
-                try { data = await response.json(); } catch (e) {}
+                try { data = await response.json(); } catch (e) { console.log('Error parsing JSON:', e); }
+                console.log('Login response data:', data);
                 // Persist minimal session context for homepage role actions
                 localStorage.setItem('userType', userType);
                 if (data && data.userIdentifier) {
@@ -126,7 +127,6 @@
                     // Fallback when backend doesn't send JSON
                     if (userType === 'member') localStorage.setItem('userIdentifier', srn);
                     else if (userType === 'clubHead') localStorage.setItem('userIdentifier', clubName);
-                    else if (userType === 'faculty') localStorage.setItem('userIdentifier', facultyEmail);
                 }
                 showToast('Login successful! Redirecting...');
                 setTimeout(() => {
@@ -136,6 +136,7 @@
                 // Handle unsuccessful login response
                 console.error('Login failed:', response.statusText);
                 const text = await response.text();
+                console.log('Login failed response text:', text);
                 showToast(text || 'Login failed');
             }
         } catch (error) {

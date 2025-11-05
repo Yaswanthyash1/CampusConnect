@@ -42,7 +42,6 @@
             <option value="">Select User Type</option>
             <option value="club">Club</option>
             <option value="member">Member</option>
-            <option value="faculty">Faculty</option>
         </select>
         <div id="additionalFields"></div>
         <button type="submit">Register</button>
@@ -90,7 +89,6 @@
                 <input type="email" placeholder="Email" name="email" required>
                 <input type="password" placeholder="Password" name="password" required>
                 <input type="text" placeholder="Description" name="description" required>
-                <input type="text" placeholder="Faculty ID" name="facultyId" required>
                 <select name="clubType" required>
                     <option value="">Select Club Type</option>
                     <option value="Dance">Dance</option>
@@ -135,12 +133,6 @@
                     <option value="Female">Female</option>
                 </select>
                 <input type="text" placeholder="Club Name" name="clubName">
-            `;
-        } else if (userType === 'faculty') {
-            additionalFieldsDiv.innerHTML = `
-                <input type="email" placeholder="Email" name="email" required>
-                <input type="password" placeholder="Password" name="password" required>
-                <input type="text" placeholder="Faculty Name" name="facultyName" required>
             `;
         }
     }

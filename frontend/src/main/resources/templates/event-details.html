@@ -243,6 +243,10 @@
         </span>
             </div>
         </div>
+        <div th:if="${eventAttachment != null && eventAttachment != ''}">
+            <span class="label">Attachment:</span>
+            <a class="btn btn-secondary" th:href="@{/download/{filename}(filename=${eventAttachment})}" th:text="${eventAttachment}">Download Attachment</a>
+        </div>
         <a class="btn btn-primary" href="/events">← Back </a>
     </div>
         <a class="btn btn-primary" href="/events-dashboard">← Back to Events</a>

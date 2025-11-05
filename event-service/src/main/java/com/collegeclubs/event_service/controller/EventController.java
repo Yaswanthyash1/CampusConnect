@@ -178,4 +178,15 @@ public class EventController {
                 .body(new java.util.ArrayList<>());
         }
     }
+
+    @GetMapping("/api/event/{id}")
+    @ResponseBody
+    public ResponseEntity<Event> getEventByIdApi(@PathVariable Long id) {
+        Event event = eventService.getEventById(id);
+        if (event != null) {
+            return ResponseEntity.ok(event);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

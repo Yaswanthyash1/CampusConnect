@@ -2,6 +2,8 @@ package com;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1542,6 +1548,54 @@ public class MainController {
         }
     }
 
+    // New endpoint to show event details
+    @GetMapping("/event-details/{id}")
+    public String showEventDetails(@PathVariable Long id, Model model) {
+        try {
+            String url = eventServiceUrl + "/api/event/" + id;
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                model.addAttribute("event", response.getBody());
+                // Optionally add eventAttachment if present
+                Object attachment = response.getBody().get("attachment");
+                if (attachment != null) {
+                    model.addAttribute("eventAttachment", attachment.toString());
+                }
+                return "event-details";
+            } else {
+                model.addAttribute("error", "Event not found");
+                return "error";
+            }
+        } catch (Exception e) {
+            model.addAttribute("error", "Error fetching event details: " + e.getMessage());
+            return "error";
+        }
+    }
+
+    // New endpoint to show request details
+    @GetMapping("/request-details/{id}")
+    public String showRequestDetails(@PathVariable Long id, Model model) {
+        try {
+            String url = requestServiceUrl + "/api/request/" + id;
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                model.addAttribute("request", response.getBody());
+                // Optionally add requestAttachment if present
+                Object attachment = response.getBody().get("filePath");
+                if (attachment != null) {
+                    model.addAttribute("requestAttachment", attachment.toString());
+                }
+                return "request-details";
+            } else {
+                model.addAttribute("error", "Request not found");
+                return "error";
+            }
+        } catch (Exception e) {
+            model.addAttribute("error", "Error fetching request details: " + e.getMessage());
+            return "error";
+        }
+    }
+
     // Helper to convert ISO date strings and epoch timestamps into java.util.Date
     private void convertDateFieldsIfNeeded(java.util.Map<String, Object> map, String... keys) {
         for (String key : keys) {
@@ -1834,6 +1888,27 @@ public class MainController {
             System.err.println("Error in /complete-request: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
+        }
+    }
+
+    @GetMapping("/download/{filename}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
+        try {
+            // Adjust this path to your upload directory
+            Path filePath = Paths.get("uploads").resolve(filename).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+            if (!resource.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            String contentType = Files.probeContentType(filePath);
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"))
+                .body(resource);
+        } catch (MalformedURLException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

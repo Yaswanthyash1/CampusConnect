@@ -113,6 +113,22 @@ public class ClubService {
             Club savedClub = clubRepository.save(club);
             System.out.println("ClubService saved club successfully with ID: " + savedClub.getId());
 
+            // Insert club credentials into clubdb.club for login compatibility
+            try {
+                String clubDbUrl = "jdbc:mysql://host.docker.internal:3306/clubdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+                org.springframework.jdbc.datasource.DriverManagerDataSource dataSource = new org.springframework.jdbc.datasource.DriverManagerDataSource();
+                dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+                dataSource.setUrl(clubDbUrl);
+                dataSource.setUsername("clubuser");
+                dataSource.setPassword("clubpass");
+                org.springframework.jdbc.core.JdbcTemplate clubJdbcTemplate = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+                String sql = "INSERT INTO club (clubName, password) VALUES (?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password)";
+                clubJdbcTemplate.update(sql, club.getClubName(), club.getPassword());
+                System.out.println("Inserted/updated club credentials in clubdb.club for login");
+            } catch (Exception e) {
+                System.err.println("Error inserting club credentials into clubdb.club: " + e.getMessage());
+            }
+
             return savedClub;
         } catch (Exception e) {
             System.err.println("Error in ClubService.registerClub: " + e.getMessage());
