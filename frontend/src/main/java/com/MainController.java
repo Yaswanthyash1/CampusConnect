@@ -928,6 +928,14 @@ public class MainController {
                     ? pastResponse.getBody()
                     : java.util.Collections.emptyList();
 
+            // Convert timestamp fields to java.util.Date for proper Thymeleaf formatting
+            for (java.util.Map<String, Object> event : upcomingEvents) {
+                convertDateFieldsIfNeeded(event, "timestamp");
+            }
+            for (java.util.Map<String, Object> event : pastEvents) {
+                convertDateFieldsIfNeeded(event, "timestamp");
+            }
+
             model.addAttribute("upcomingEvents", upcomingEvents);
             model.addAttribute("pastEvents", pastEvents);
 
@@ -940,6 +948,43 @@ public class MainController {
         }
         
         return "events-dashboard";
+    }
+
+    @GetMapping("/event-details/{id}")
+    public String showEventDetails(@PathVariable Long id, Model model) {
+        try {
+            String url = eventServiceUrl + "/api/event/" + id;
+            System.out.println("Fetching event details from: " + url);
+            ResponseEntity<java.util.Map> response = restTemplate.getForEntity(url, java.util.Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> eventMap = new java.util.HashMap<>(response.getBody());
+
+                // Convert timestamp field to java.util.Date for proper Thymeleaf formatting
+                convertDateFieldsIfNeeded(eventMap, "timestamp");
+
+                model.addAttribute("event", eventMap);
+
+                // Determine if event is upcoming (timestamp after now)
+                boolean isUpcoming = false;
+                Object timestampObj = eventMap.get("timestamp");
+                if (timestampObj instanceof java.util.Date) {
+                    java.util.Date timestamp = (java.util.Date) timestampObj;
+                    isUpcoming = timestamp.after(new java.util.Date());
+                }
+                model.addAttribute("isUpcoming", isUpcoming);
+
+                return "event-details";
+            } else {
+                System.err.println("Failed to fetch event details: " + response.getStatusCode());
+                return "redirect:/events-dashboard";
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching event details: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/events-dashboard";
+        }
     }
 
     @GetMapping("/pending-tasks")
@@ -1087,6 +1132,37 @@ public class MainController {
         }
 
         return "pending-tasks";
+    }
+
+    @GetMapping("/request-details/{id}")
+    public String showRequestDetails(@PathVariable Long id, Model model, HttpSession session) {
+        Boolean isAuthenticated = (Boolean) session.getAttribute("isAuthenticated");
+
+        if (isAuthenticated == null || !isAuthenticated) {
+            return "redirect:/login";
+        }
+
+        try {
+            String requestUrl = requestServiceUrl + "/api/request/" + id;
+            ResponseEntity<java.util.Map> response = restTemplate.getForEntity(requestUrl, java.util.Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> requestMap = new java.util.HashMap<>(response.getBody());
+
+                // Convert timestamp fields to java.util.Date for proper formatting
+                convertDateFieldsIfNeeded(requestMap, "timestamp", "createdAt", "updatedAt");
+
+                model.addAttribute("request", requestMap);
+                return "request-details";
+            } else {
+                return "redirect:/pending-tasks";
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching request details: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/pending-tasks";
+        }
     }
 
     // Show processed (accepted/rejected) requests for a club

@@ -214,7 +214,7 @@
 
             <div class="event-meta">
                 <p><strong>📍</strong> <span th:text="${event.location}">Location</span></p>
-                <p><strong>📅</strong> <span th:text="${#dates.format(event.timestamp,'dd MMM yyyy HH:mm')}">Date</span>
+                <p><strong>📅</strong> <span th:text="${event.timestamp != null ? (event.timestamp instanceof T(java.time.temporal.Temporal) ? #temporals.format(event.timestamp,'dd MMM yyyy HH:mm') : #dates.format(event.timestamp,'dd MMM yyyy HH:mm')) : ''}">Date</span>
                 </p>
                 <p><strong>🏛</strong> <span th:text="${event.clubName}">Club</span></p>
                 <p><strong>💰</strong> ₹<span th:text="${event.budget}">Budget</span></p>

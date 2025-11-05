@@ -328,7 +328,7 @@
                         <p><strong>📍</strong> <span th:text="${event['venue']}">Location</span></p>
                         <p><strong>📅</strong>
                             <span th:if="${event['timestamp']}"
-                                  th:text="${#dates.format(event['timestamp'],'dd MMM yyyy HH:mm')}">Date</span>
+                                  th:text="${event['timestamp'] != null ? (event['timestamp'] instanceof T(java.time.temporal.Temporal) ? #temporals.format(event['timestamp'],'dd MMM yyyy HH:mm') : #dates.format(event['timestamp'],'dd MMM yyyy HH:mm')) : 'N/A'}">Date</span>
                             <span th:unless="${event['timestamp']}">N/A</span>
                         </p>
                         <p><strong>🏛</strong> <span th:text="${event['clubname']}">Club</span></p>
@@ -365,7 +365,7 @@
                         <tr th:each="req : ${pendingRequests}">
                             <td th:text="${req['requesterName']} ?: '-'">Requester</td>
                             <td th:text="${req['type']} ?: '-'">Type</td>
-                            <td th:text="${#dates.format(req['createdAt'], 'dd MMM yyyy HH:mm')} ?: '-'">Date</td>
+                            <td th:text="${req['createdAt'] != null ? (req['createdAt'] instanceof T(java.time.temporal.Temporal) ? #temporals.format(req['createdAt'],'dd MMM yyyy HH:mm') : #dates.format(req['createdAt'],'dd MMM yyyy HH:mm')) : '-'}">Date</td>
                             <td>
                                 <form class="request-action-form" th:action="@{'/club/' + ${club.clubName} + '/requests'}" method="post" style="display:inline;">
                                     <input type="hidden" name="requestId" th:value="${req['id']}" />

@@ -77,6 +77,23 @@ public class EventController {
         }
     }
 
+    @GetMapping("/api/event/{id}")
+    @ResponseBody
+    public ResponseEntity<Event> getEventById(@PathVariable Long id) {
+        try {
+            Event event = eventService.getEventById(id);
+            if (event != null) {
+                return ResponseEntity.ok(event);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching event by ID: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     // Create Event (REST) - consumed by frontend service via multipart/form-data
     @PostMapping(value = "/api/events", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseBody

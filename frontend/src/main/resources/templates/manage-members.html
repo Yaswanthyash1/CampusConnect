@@ -69,7 +69,7 @@
         <div class="details-grid">
             <div class="detail-card">
                 <div class="label">Date & Time</div>
-                <div class="value" th:text="${#dates.format(event.timestamp, 'yyyy-MM-dd HH:mm')}">Date</div>
+                <div class="value" th:text="${event.timestamp != null ? #temporals.format(event.timestamp, 'yyyy-MM-dd HH:mm') : ''}">Date</div>
             </div>
             <div class="detail-card">
                 <div class="label">Location</div>

@@ -305,7 +305,7 @@
 
                 <div class="project-meta">
                     <p><strong>📅</strong> <span
-                            th:text="${#dates.format(project.startDate,'dd MMM yyyy')} + ' - ' + ${#dates.format(project.endDate,'dd MMM yyyy')}">Timeline</span>
+                            th:text="${(project.startDate != null ? (project.startDate instanceof T(java.time.temporal.Temporal) ? #temporals.format(project.startDate,'dd MMM yyyy') : #dates.format(project.startDate,'dd MMM yyyy')) : '') + ' - ' + (project.endDate != null ? (project.endDate instanceof T(java.time.temporal.Temporal) ? #temporals.format(project.endDate,'dd MMM yyyy') : #dates.format(project.endDate,'dd MMM yyyy')) : '')}">Timeline</span>
                     </p>
                     <p><strong>👥</strong> <span th:text="${project.teamSize} + ' members'">Team Size</span></p>
                     <p><strong>💰</strong> ₹<span th:text="${project.budget}">Budget</span></p>
@@ -353,7 +353,7 @@
 
                 <div class="project-meta">
                     <p><strong>📅</strong> <span
-                            th:text="${#dates.format(project.startDate,'dd MMM yyyy')} + ' - ' + ${#dates.format(project.endDate,'dd MMM yyyy')}">Timeline</span>
+                            th:text="${(project.startDate != null ? (project.startDate instanceof T(java.time.temporal.Temporal) ? #temporals.format(project.startDate,'dd MMM yyyy') : #dates.format(project.startDate,'dd MMM yyyy')) : '') + ' - ' + (project.endDate != null ? (project.endDate instanceof T(java.time.temporal.Temporal) ? #temporals.format(project.endDate,'dd MMM yyyy') : #dates.format(project.endDate,'dd MMM yyyy')) : '')}">Timeline</span>
                     </p>
                     <p><strong>👥</strong> <span th:text="${project.teamSize} + ' members'">Team Size</span></p>
                     <p><strong>💰</strong> ₹<span th:text="${project.budget}">Budget</span></p>

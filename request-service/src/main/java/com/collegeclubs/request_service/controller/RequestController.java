@@ -383,6 +383,23 @@ public class RequestController {
         return "request-details";
     }
 
+    @GetMapping("/api/request/{id}")
+    @ResponseBody
+    public ResponseEntity<Request> getRequestByIdApi(@PathVariable Long id) {
+        try {
+            Optional<Request> requestOpt = requestService.getRequestById(id);
+            if (requestOpt.isPresent()) {
+                return ResponseEntity.ok(requestOpt.get());
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching request by ID: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @GetMapping("/club/{clubName}/processed-requests")
     @ResponseBody
     public ResponseEntity<List<Request>> getProcessedRequestsForClub(@PathVariable String clubName) {
