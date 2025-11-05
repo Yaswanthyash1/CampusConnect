@@ -3,558 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <!-- CSRF meta tags (Spring Security) - JS will read these if present -->
-    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}" />
-    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}" />
-    <title>Club Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=League+Spartan&display=swap" rel="stylesheet">
-    <link href="/css/app.css" rel="stylesheet">
+    <title>Club</title>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg1: #0f2027;
-            --bg2: #203a43;
-            --bg3: #2c5364;
-            --accent: #3ec1d3;
-            --accent2: #a0e7e5;
-            --text: #ffffff;
-            --glass: rgba(255,255,255,0.08);
-            --shadow: 0 10px 25px rgba(0,0,0,0.35);
+            --bg1: #0f2027; --bg2: #203a43; --bg3: #2c5364;
+            --accent: #3ec1d3; --accent2: #a0e7e5; --text: #ffffff;
+            --glass: rgba(255, 255, 255, 0.12); --shadow: 0 10px 25px rgba(0,0,0,0.35); --muted: rgba(255,255,255,0.8);
         }
         * { box-sizing: border-box; }
-        body {
-            margin:0;
-            font-family:'League Spartan',sans-serif;
-            background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));
-            color:var(--text);
-            min-height:100vh;
-        }
-        .navbar {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:18px 40px;
-            background:rgba(255,255,255,0.05);
-            backdrop-filter:blur(12px);
-            position:sticky;
-            top:0;
-            z-index:10;
-        }
-        .navbar h1 { margin:0; font-size:24px }
-        .nav-btn {
-            padding:8px 14px;
-            border-radius:8px;
-            border:none;
-            background:linear-gradient(145deg,var(--accent),var(--accent2));
-            color:#0c1f28;
-            font-weight:600;
-            text-decoration:none;
-            cursor:pointer;
-            margin-left:8px;
-        }
-        .container {
-            max-width:1100px;
-            margin:40px auto;
-            padding:28px;
-            background:var(--glass);
-            border-radius:14px;
-            box-shadow:var(--shadow);
-        }
-        h1 { color:var(--accent); margin-bottom:16px; }
-        .club-details p { margin:6px 0; }
-        .centered-buttons {
-            text-align:center;
-            margin:24px 0;
-        }
-        .centered-buttons .nav-btn { margin:0 10px; }
-        .events-grid {
-            display:grid;
-            grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
-            gap:20px;
-            margin-top:16px;
-        }
-        .event-card {
-            background:rgba(255,255,255,0.1);
-            border-radius:10px;
-            padding:18px;
-            box-shadow:var(--shadow);
-            transition:transform 0.3s;
-        }
-        .event-card:hover { transform:translateY(-5px); }
-        .event-card-header {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-bottom:12px;
-        }
-        .event-type {
-            background:var(--accent);
-            color:#0c1f28;
-            padding:4px 10px;
-            border-radius:12px;
-            font-weight:500;
-        }
-        .event-meta p {
-            margin:6px 0;
-            font-size:14px;
-        }
-        .event-actions {
-            margin-top:16px;
-            text-align:right;
-        }
-        .btn-secondary {
-            display:inline-block;
-            padding:8px 14px;
-            border-radius:8px;
-            background:rgba(255, 255, 255, 0.2);
-            color:var(--text);
-            font-weight:600;
-            text-decoration:none;
-        }
-        .empty-state {
-            text-align:center;
-            padding:40px 20px;
-            border-radius:10px;
-            background:rgba(255, 255, 255, 0.05);
-            margin-top:30px;
-        }
-        .member-btn {
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: none;
-            background: linear-gradient(145deg, var(--accent), var(--accent2));
-            color: #0c1f28;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 8px;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 10% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 90%;
-            max-width: 400px;
-            border-radius: 10px;
-            color: #222;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .close:hover,
-        .close:focus {
-            color: #000;
-            text-decoration: none;
-            cursor: pointer;
-        }
+        body { margin:0; font-family:'League Spartan',sans-serif; background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3)); background-attachment:fixed; color:var(--text); min-height:100vh; }
+        .navbar { display:flex; justify-content:space-between; align-items:center; padding:18px 40px; background:rgba(255,255,255,0.05); backdrop-filter:blur(12px); position:sticky; top:0; z-index:10; }
+        .navbar h1 { margin:0; font-size:28px; }
+        .navbar .right { display:flex; gap:15px; align-items:center; }
+        .nav-btn { padding:8px 14px; border:none; border-radius:8px; background:linear-gradient(145deg,var(--accent),var(--accent2)); color:#0c1f28; font-weight:600; cursor:pointer; transition:transform .15s ease; text-decoration:none; }
+        .nav-btn:hover { transform: scale(1.05); }
+        .container { max-width: 900px; margin: 40px auto; padding: 32px; background: var(--glass); border-radius: 16px; box-shadow: var(--shadow); }
+        .project-hero { display:flex; gap:22px; align-items:flex-start; padding:22px; margin-bottom:30px; background:rgba(255,255,255,0.05); border-radius:12px; }
+        .hero-left { flex:1; }
+        .hero-title { font-size:28px; margin:0 0 6px; color:var(--accent); }
+        .hero-sub { color: var(--muted); margin: 0 0 12px; font-size: 16px; }
+        .hero-desc { margin-top:6px; color:var(--text); line-height:1.6; white-space:pre-wrap; }
+        .hero-actions { display:flex; flex-direction:column; gap:10px; align-items:flex-end; }
+        .pill { padding:8px 16px; border-radius:20px; font-size:14px; font-weight:700; text-transform:uppercase; background:linear-gradient(145deg, var(--accent), var(--accent2)); color:#0c1f28; }
+        .status-pill { padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; background: rgba(255,255,255,0.1); color: var(--text); border: 2px solid rgba(255,255,255,0.2); }
+        .details-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:30px; }
+        .detail-card { background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); border-left:4px solid var(--accent); }
+        .detail-card .label { font-weight:700; color:var(--accent2); margin-bottom:6px; display:block; font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
+        .detail-card .value { color: var(--text); font-size: 16px; }
+        .section { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .section-title { font-size: 18px; font-weight: 700; color: var(--accent2); margin-bottom: 12px; display:block; }
+        .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+        .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.07); padding: 16px; border-radius: 12px; box-shadow: var(--shadow); transition: transform .2s ease; }
+        .card:hover { transform: translateY(-2px); }
+        .card h4 { margin: 0 0 6px; color: var(--accent2); }
+        .muted { color: var(--muted); font-size: 14px; }
+        .btn { padding: 10px 16px; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; transition: all .3s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: linear-gradient(145deg, var(--accent), var(--accent2)); color: #0c1f28; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: var(--text); border: 2px solid rgba(255,255,255,0.2); }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.07); }
+        .empty { background: rgba(255,255,255,0.04); padding: 20px; border-radius: 10px; text-align: center; }
+        @media (max-width:700px) { .project-hero { flex-direction: column; } .hero-actions { align-items: stretch; } }
 
-    .member-btn {
-        text-decoration: none;
-        color: inherit;
-        cursor: pointer;
-    }
-
-    .member-btn:hover {
-        text-decoration: underline;
-    }
+        /* Modal for member details */
+        .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background:rgba(0,0,0,0.4); }
+        .modal-content { background: #0c1f28; color:#fff; margin: 10% auto; padding: 20px; border-radius: 10px; width: 90%; max-width: 420px; box-shadow: var(--shadow); border:1px solid rgba(255,255,255,0.12); }
+        .close { float:right; font-size: 26px; font-weight: 700; cursor: pointer; opacity: .8; }
+        .close:hover { opacity: 1; }
     </style>
-
 </head>
 <body>
 <div class="navbar">
     <h1>NITK CLUBS</h1>
-    <div>
-        <a class="nav-btn" href="/home">Home</a>
+    <div class="right">
+        <a class="nav-btn" th:href="@{/home}">Home</a>
         <button class="nav-btn" id="logoutBtn">Logout</button>
     </div>
 </div>
+
 <div class="container">
-    <div class="dashboard">
-        <h1 th:text="'Hi, ' + ${club.clubName} + ' Club Head!'"></h1>
-        <div class="club-details">
-            <p><strong>Type:</strong> <span th:text="${club.clubType}"></span></p>
-            <p><strong>Faculty ID:</strong> <span th:text="${club.facultyId}"></span></p>
-            <p><strong>Head SRN:</strong> <span th:text="${club.headSrn}"></span></p>
+    <div class="project-hero">
+        <div class="hero-left">
+            <h1 class="hero-title" th:text="${club != null && club['clubName'] != null ? club['clubName'] : (clubName != null ? clubName : 'Club')}">Club Name</h1>
+            <div class="hero-sub" th:if="${club != null && club['clubType'] != null}">Type: <span th:text="${club['clubType']}">Type</span></div>
+            <div class="hero-desc" th:text="${club != null && club['description'] != null ? club['description'] : 'Club description not available.'}">Description...</div>
         </div>
-
-        <div class="centered-buttons">
-            <button class="nav-btn" onclick="showContent('members')">Members</button>
-            <button class="nav-btn" onclick="showContent('events')">Events</button>
+        <div class="hero-actions">
+            <span class="pill" th:text="${members != null ? #lists.size(members) + ' Members' : '0 Members'}">0 Members</span>
+            <span class="status-pill" th:text="${clubEvents != null ? #lists.size(clubEvents) + ' Upcoming Events' : '0 Upcoming Events'}">0 Upcoming Events</span>
         </div>
+    </div>
 
-        <!-- MEMBERS section inside your container -->
-        <div class="content" id="members-content" style="display:none;">
-            <h3>Club Members</h3>
+    <div class="details-grid">
+        <div class="detail-card">
+            <span class="label">Total Members</span>
+            <div class="value" th:text="${members != null ? #lists.size(members) : 0}">0</div>
+        </div>
+        <div class="detail-card">
+            <span class="label">Upcoming Events</span>
+            <div class="value" th:text="${clubEvents != null ? #lists.size(clubEvents) : 0}">0</div>
+        </div>
+        <div class="detail-card" th:if="${club != null && club['facultyId'] != null}">
+            <span class="label">Faculty ID</span>
+            <div class="value" th:text="${club['facultyId']}">-</div>
+        </div>
+        <div class="detail-card" th:if="${club != null && club['headSrn'] != null}">
+            <span class="label">Head SRN</span>
+            <div class="value" th:text="${club['headSrn']}">-</div>
+        </div>
+    </div>
 
-            <!-- Members count -->
-            <div class="members-stats" style="margin-bottom: 20px;">
-                <p style="background: var(--glass); padding: 10px; border-radius: 8px; text-align: center;">
-                    <strong>Total Members: </strong>
-                    <span th:text="${#lists.size(members)}">0</span>
-                </p>
-            </div>
-
-            <!-- Empty state -->
-            <div th:if="${members == null || #lists.isEmpty(members)}" style="text-align: center; padding: 40px;">
-                <p style="background: var(--glass); padding: 20px; border-radius: 8px;">
-                    <strong>No members found for this club.</strong><br>
-                    <small>Members will appear here once they join through enrollment requests.</small>
-                </p>
-            </div>
-
-            <!-- Members grid -->
-            <div class="members-grid" th:if="${members != null && !#lists.isEmpty(members)}"
-                 style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
-                <div class="member-card" th:each="member : ${members}"
-                     style="background: var(--glass); padding: 20px; border-radius: 12px; backdrop-filter: blur(8px); transition: transform 0.2s;"
-                     th:attr="
-                 data-name=${member.name},
-                 data-srn=${member.srn},
-                 data-email=${member.email},
-                 data-dept=${member.dept},
-                 data-sem=${member.sem},
-                 data-domain=${member.domain},
-                 data-phone=${member.phoneno},
-                 data-gender=${member.gender},
-                 data-role=${member.role}">
-
-                    <div class="member-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
-                        <h4 th:text="${member.name}" style="margin: 0; color: var(--accent2);">Member Name</h4>
-                        <p style="margin: 5px 0; font-size: 14px; opacity: 0.8;" th:text="'SRN: ' + ${member.srn}">SRN</p>
-                    </div>
-
-                    <div class="member-actions" style="text-align:center;">
-                        <button class="member-btn" onclick="showMemberDetails(this)">
-                            View Details
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal for member details -->
-            <div class="modal" id="memberModal">
-                <div class="modal-content" style="background: var(--glass); color: var(--text); box-shadow: var(--shadow); border: none;">
-                    <span class="close" onclick="closeMemberModal()">&times;</span>
-                    <h2 style="color: var(--accent2);">Member Details</h2>
-                    <div id="memberDetails"></div>
+    <div class="section">
+        <span class="section-title">Club Members</span>
+        <div class="empty" th:if="${members == null || #lists.isEmpty(members)}">No members found for this club.</div>
+        <div class="grid" th:if="${members != null && !#lists.isEmpty(members)}">
+            <div class="card member-card" th:each="member : ${members}"
+                 th:attr="data-name=${member.name}, data-srn=${member.srn}, data-email=${member.email}, data-dept=${member.dept}, data-sem=${member.sem}, data-domain=${member.domain}, data-phone=${member.phoneno}, data-gender=${member.gender}, data-role=${member.role}">
+                <h4 th:text="${member.name}">Member Name</h4>
+                <div class="muted" th:text="'SRN: ' + ${member.srn}">SRN</div>
+                <div style="margin-top:10px;">
+                    <button class="btn btn-secondary" onclick="showMemberDetails(this)">View Details</button>
                 </div>
             </div>
         </div>
 
-        <script>
-            function showContent(contentId) {
-                // Hide all content sections
-                document.querySelectorAll('.content').forEach(section => {
-                    section.style.display = 'none';
-                });
-
-                // Show the selected content section
-                const contentSection = document.getElementById(`${contentId}-content`);
-                if (contentSection) {
-                    contentSection.style.display = 'block';
-                }
-            }
-
-            function showMemberDetails(button) {
-                const memberCard = button.closest('.member-card');
-                const memberDetails = {
-                    name: memberCard.getAttribute('data-name'),
-                    srn: memberCard.getAttribute('data-srn'),
-                    email: memberCard.getAttribute('data-email'),
-                    dept: memberCard.getAttribute('data-dept'),
-                    sem: memberCard.getAttribute('data-sem'),
-                    domain: memberCard.getAttribute('data-domain'),
-                    phone: memberCard.getAttribute('data-phone'),
-                    gender: memberCard.getAttribute('data-gender'),
-                    role: memberCard.getAttribute('data-role')
-                };
-
-                const modal = document.getElementById('memberModal');
-                const detailsContainer = document.getElementById('memberDetails');
-                detailsContainer.innerHTML = `
-                    <p><strong>Name:</strong> ${memberDetails.name}</p>
-                    <p><strong>SRN:</strong> ${memberDetails.srn}</p>
-                    <p><strong>Email:</strong> ${memberDetails.email}</p>
-                    <p><strong>Department:</strong> ${memberDetails.dept}</p>
-                    <p><strong>Semester:</strong> ${memberDetails.sem}</p>
-                    <p><strong>Domain:</strong> ${memberDetails.domain}</p>
-                    <p><strong>Phone:</strong> ${memberDetails.phone}</p>
-                    <p><strong>Gender:</strong> ${memberDetails.gender}</p>
-                    <p><strong>Role:</strong> ${memberDetails.role}</p>
-                `;
-
-                modal.style.display = 'block';
-            }
-
-            function closeMemberModal() {
-                const modal = document.getElementById('memberModal');
-                modal.style.display = 'none';
-            }
-
-            // Close modal when clicking outside of it
-            window.onclick = function(event) {
-                const modal = document.getElementById('memberModal');
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
-            }
-        </script>
-
-
-        <!-- Events -->
-        <div class="content" id="events-content" style="display:none;">
-            <h3>Upcoming Events:</h3>
-            <div class="events-grid" th:if="${clubEvents != null and !#lists.isEmpty(clubEvents)}">
-                <div class="event-card" th:each="event : ${clubEvents}">
-                    <div class="event-card-header">
-                        <h3 th:text="${event['eventname']}">Event Name</h3>
-                        <span class="event-type" th:text="${event['type']}">Type</span>
-                    </div>
-                    <div class="event-meta">
-                        <p><strong>📍</strong> <span th:text="${event['venue']}">Location</span></p>
-                        <p><strong>📅</strong>
-                            <span th:if="${event['timestamp']}"
-                                  th:text="${event['timestamp'] != null ? (event['timestamp'] instanceof T(java.time.temporal.Temporal) ? #temporals.format(event['timestamp'],'dd MMM yyyy HH:mm') : #dates.format(event['timestamp'],'dd MMM yyyy HH:mm')) : 'N/A'}">Date</span>
-                            <span th:unless="${event['timestamp']}">N/A</span>
-                        </p>
-                        <p><strong>🏛</strong> <span th:text="${event['clubname']}">Club</span></p>
-                        <p><strong>💰</strong> ₹<span th:text="${event['budget']}">Budget</span></p>
-                    </div>
-                    <div class="event-actions">
-                        <a class="btn-secondary" th:href="@{'/event-details/' + ${event['id']}}">View Details</a>
-                    </div>
-                </div>
-            </div>
-            <div class="empty-state" th:if="${clubEvents == null or #lists.isEmpty(clubEvents)}">
-                <h3>No Events Found</h3>
-                <p>There are currently no upcoming events.</p>
+        <!-- Member details modal -->
+        <div class="modal" id="memberModal">
+            <div class="modal-content">
+                <span class="close" onclick="closeMemberModal()">&times;</span>
+                <h3 style="margin-top:0; color: var(--accent2);">Member Details</h3>
+                <div id="memberDetails" class="muted"></div>
             </div>
         </div>
+    </div>
 
-        <!-- Pending Requests Section -->
-        <div class="content" id="pending-requests-content" th:if="${pendingRequests != null}">
-            <h3>Pending Requests</h3>
-            <div th:if="${#lists.isEmpty(pendingRequests)}" class="empty-state">
-                <p>No pending requests for this club.</p>
-            </div>
-            <div th:if="${!#lists.isEmpty(pendingRequests)}">
-                <table style="width:100%; background:var(--glass); border-radius:10px; box-shadow:var(--shadow); color:var(--text);">
-                    <thead>
-                        <tr style="background:rgba(255,255,255,0.08);">
-                            <th>Requester</th>
-                            <th>Type</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="req : ${pendingRequests}">
-                            <td th:text="${req['requesterName']} ?: '-'">Requester</td>
-                            <td th:text="${req['type']} ?: '-'">Type</td>
-                            <td th:text="${req['createdAt'] != null ? (req['createdAt'] instanceof T(java.time.temporal.Temporal) ? #temporals.format(req['createdAt'],'dd MMM yyyy HH:mm') : #dates.format(req['createdAt'],'dd MMM yyyy HH:mm')) : '-'}">Date</td>
-                            <td>
-                                <form class="request-action-form" th:action="@{'/club/' + ${club.clubName} + '/requests'}" method="post" style="display:inline;">
-                                    <input type="hidden" name="requestId" th:value="${req['id']}" />
-                                    <!-- Keep buttons with name=action so non-JS fallback still works -->
-                                    <button class="nav-btn" name="action" value="accept" type="submit">Approve</button>
-                                    <button class="nav-btn" name="action" value="reject" type="submit">Reject</button>
-                                </form>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+    <div class="section">
+        <span class="section-title">Upcoming Events</span>
+        <div class="empty" th:if="${clubEvents == null or #lists.isEmpty(clubEvents)}">There are currently no upcoming events.</div>
+        <div class="grid" th:if="${clubEvents != null and !#lists.isEmpty(clubEvents)}">
+            <div class="card" th:each="event : ${clubEvents}">
+                <h4 th:text="${event['eventname']}">Event Name</h4>
+                <div class="muted" th:text="${event['type']}">Type</div>
+                <div style="margin-top:8px;">
+                    <div><strong>📍</strong> <span th:text="${event['venue']}">Location</span></div>
+                    <div><strong>📅</strong>
+                        <span th:if="${event['timestamp']}"
+                              th:text="${event['timestamp'] != null ? (event['timestamp'] instanceof T(java.time.temporal.Temporal) ? #temporals.format(event['timestamp'],'dd MMM yyyy HH:mm') : #dates.format(event['timestamp'],'dd MMM yyyy HH:mm')) : 'N/A'}">Date</span>
+                        <span th:unless="${event['timestamp']}">N/A</span>
+                    </div>
+                    <div><strong>💰</strong> ₹<span th:text="${event['budget']}">Budget</span></div>
+                </div>
+                <div style="margin-top:12px;">
+                    <a class="btn btn-primary" th:href="@{'/event-details/' + ${event['id']}}">View Details</a>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    function showContent(contentId) {
-        // Hide all content sections
-        document.querySelectorAll('.content').forEach(section => {
-            section.style.display = 'none';
-        });
-
-        // Show the selected content section
-        const contentSection = document.getElementById(`${contentId}-content`);
-        if (contentSection) {
-            contentSection.style.display = 'block';
-        }
-    }
-
+    // Logout
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
             showToast('Logging out...');
-            setTimeout(() => {
-                window.location.href = '/login';
-            }, 500);
+            setTimeout(() => { window.location.href = '/login'; }, 500);
         });
     }
 
-    // Toast notification helper function
+    // Member modal helpers
+    function showMemberDetails(btn) {
+        const card = btn.closest('.member-card');
+        const d = {
+            name: card.getAttribute('data-name'), srn: card.getAttribute('data-srn'),
+            email: card.getAttribute('data-email'), dept: card.getAttribute('data-dept'),
+            sem: card.getAttribute('data-sem'), domain: card.getAttribute('data-domain'),
+            phone: card.getAttribute('data-phone'), gender: card.getAttribute('data-gender'),
+            role: card.getAttribute('data-role')
+        };
+        const modal = document.getElementById('memberModal');
+        const box = document.getElementById('memberDetails');
+        box.innerHTML = `
+            <p><strong>Name:</strong> ${d.name || '-'}</p>
+            <p><strong>SRN:</strong> ${d.srn || '-'}</p>
+            <p><strong>Email:</strong> ${d.email || '-'}</p>
+            <p><strong>Department:</strong> ${d.dept || '-'}</p>
+            <p><strong>Semester:</strong> ${d.sem || '-'}</p>
+            <p><strong>Domain:</strong> ${d.domain || '-'}</p>
+            <p><strong>Phone:</strong> ${d.phone || '-'}</p>
+            <p><strong>Gender:</strong> ${d.gender || '-'}</p>
+            <p><strong>Role:</strong> ${d.role || '-'}</p>
+        `;
+        modal.style.display = 'block';
+    }
+    function closeMemberModal() { document.getElementById('memberModal').style.display = 'none'; }
+    window.addEventListener('click', (e) => { const m = document.getElementById('memberModal'); if (e.target === m) m.style.display = 'none'; });
+
+    // Toast helper
     function showToast(message) {
-        var t = document.createElement('div');
-        t.textContent = message;
-        Object.assign(t.style, {
-            position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-6px)',
-            background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '10px 14px', borderRadius: '8px',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.4)', zIndex: '11000', fontSize: '14px', opacity: '0',
-            transition: 'opacity 0.2s ease, transform 0.2s ease'
-        });
-        document.body.appendChild(t);
-        requestAnimationFrame(function() {
-            t.style.opacity = '1';
-            t.style.transform = 'translateX(-50%) translateY(0)';
-        });
-        setTimeout(function() {
-            t.style.opacity = '0';
-            t.style.transform = 'translateX(-50%) translateY(-6px)';
-            setTimeout(function() { t.remove(); }, 300);
-        }, 2200);
+        const t = document.createElement('div'); t.textContent = message;
+        t.style.position = 'fixed'; t.style.top = '20px'; t.style.left = '50%'; t.style.transform = 'translateX(-50%)';
+        t.style.background = 'rgba(0,0,0,0.85)'; t.style.color = '#fff'; t.style.padding = '10px 14px'; t.style.borderRadius = '8px';
+        t.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)'; t.style.zIndex = '11000'; t.style.fontSize = '14px'; t.style.opacity = '0';
+        t.style.transition = 'opacity 0.2s ease, transform 0.2s ease'; document.body.appendChild(t);
+        t.style.transform = 'translateX(-50%) translateY(-6px)';
+        requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)'; });
+        setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(-6px)'; setTimeout(()=> t.remove(), 300); }, 2200);
     }
-
-    // Delegate submit of pending request forms (Approve / Reject) to do AJAX and show toast + remove row
-    document.addEventListener('submit', function (e) {
-        const form = e.target && e.target.closest && e.target.closest('.request-action-form');
-        if (!form) return;
-        e.preventDefault();
-
-        // Determine action: prefer the button that triggered submit (e.submitter) if available
-        const submitter = e.submitter || document.activeElement;
-        let action = null;
-        if (submitter && submitter.getAttribute) action = submitter.getAttribute('value') || submitter.value;
-        if (!action) {
-            const actInput = form.querySelector('[name="action"]');
-            if (actInput) action = actInput.value;
-        }
-
-        const idInput = form.querySelector('input[name="requestId"]');
-        const requestId = idInput ? idInput.value : null;
-        const url = form.getAttribute('action') || window.location.pathname;
-
-        if (!action || !requestId) {
-            showToast('Invalid request data');
-            return;
-        }
-
-        const buttons = form.querySelectorAll('button');
-        buttons.forEach(b => b.disabled = true);
-
-        const payload = new URLSearchParams();
-        payload.append('requestId', requestId);
-        payload.append('action', action);
-
-        // headers: content-type, ajax detection, and optional CSRF
-        const headers = { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' };
-        const csrfMeta = document.querySelector('meta[name="_csrf"]');
-        if (csrfMeta) {
-            const csrfToken = csrfMeta.getAttribute('content');
-            const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
-            const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : 'X-CSRF-TOKEN';
-            if (csrfToken) headers[csrfHeader] = csrfToken;
-        }
-
-        fetch(url, {
-            method: 'POST',
-            headers: headers,
-            body: payload.toString(),
-            redirect: 'follow'
-        }).then(function (response) {
-            const contentType = (response.headers.get('content-type') || '').toLowerCase();
-
-            function removeRow(tr) {
-                if (!tr) return;
-                const height = tr.offsetHeight + 'px';
-                tr.style.boxSizing = 'border-box';
-                tr.style.transition = 'opacity 0.25s ease, transform 0.25s ease, height 0.25s ease, padding 0.25s ease, margin 0.25s ease';
-                tr.style.height = height;
-                requestAnimationFrame(function() {
-                    tr.style.opacity = '0';
-                    tr.style.transform = 'translateX(-10px)';
-                    tr.style.height = '0';
-                    tr.style.paddingTop = '0';
-                    tr.style.paddingBottom = '0';
-                    tr.style.marginTop = '0';
-                    tr.style.marginBottom = '0';
-                });
-                setTimeout(function() {
-                    if (tr && tr.parentNode) {
-                        const tbody = tr.parentNode;
-                        tbody.removeChild(tr);
-                        if (tbody.querySelectorAll('tr').length === 0) {
-                            const colCount = document.querySelectorAll('table thead th').length || 1;
-                            const placeholder = document.createElement('tr');
-                            const td = document.createElement('td');
-                            td.colSpan = colCount;
-                            td.style.textAlign = 'center';
-                            td.style.padding = '20px';
-                            td.style.opacity = '0.9';
-                            td.textContent = 'No pending requests';
-                            placeholder.appendChild(td);
-                            tbody.appendChild(placeholder);
-                        }
-                    }
-                }, 300);
-            }
-
-            if (contentType.indexOf('application/json') !== -1) {
-                return response.json().then(function (data) {
-                    if (response.ok) {
-                        const msg = data && data.message ? data.message : ('Request ' + (action === 'accept' ? 'accepted' : 'rejected') + ' successfully');
-                        showToast(msg);
-                        removeRow(form.closest('tr'));
-                    } else {
-                        const msg = data && data.message ? data.message : ('Failed to ' + action + ' (status ' + response.status + ')');
-                        showToast(msg);
-                        buttons.forEach(b => b.disabled = false);
-                    }
-                }).catch(function (err) {
-                    console.error('Error parsing JSON response:', err);
-                    if (response.ok) {
-                        showToast('Request ' + (action === 'accept' ? 'accepted' : 'rejected') + ' successfully');
-                        removeRow(form.closest('tr'));
-                    } else {
-                        showToast('Failed to ' + action + ' (status ' + response.status + ')');
-                        buttons.forEach(b => b.disabled = false);
-                    }
-                });
-            } else {
-                if (response.ok) {
-                    showToast('Request ' + (action === 'accept' ? 'accepted' : 'rejected') + ' successfully');
-                    removeRow(form.closest('tr'));
-                } else {
-                    showToast('Failed to ' + action + ' (status ' + response.status + ')');
-                    buttons.forEach(b => b.disabled = false);
-                }
-            }
-        }).catch(function (err) {
-            console.error('Error submitting request action:', err);
-            showToast('Error processing request');
-            buttons.forEach(b => b.disabled = false);
-        });
-    });
-
-    /* Ensure members section is displayed on page load */
-    window.addEventListener('DOMContentLoaded', function() {
-        if (window.location.pathname.endsWith('/club-head/members')) {
-            showContent('members');
-        }
-    });
 </script>
 </body>
 </html>
