@@ -16,7 +16,16 @@ Data persistence
 Build and run (Windows cmd):
 
 ```bat
-cd %~dp0
+ssh-keygen -t ed25519 -C "your_email@example.com"
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+cat ~/.ssh/id_ed25519.pub
+```
+Copy the output and add it to your GitHub account under SSH keys.
+
+```bat
+git clone https://github.com/Yaswanthyash1/CampusConnect.git
+git checkout multi-docker
 docker compose build
 docker compose up -d
 
