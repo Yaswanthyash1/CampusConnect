@@ -1,0 +1,12 @@
+.gradle
+.idea
+build/
+out/
+**/build/
+**/.gradle/
+debug-wb/
+sql-workbench/
+*.log
+*.bat
+*.txt
+
