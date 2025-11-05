@@ -5,6 +5,7 @@ import com.collegeclubs.project_service.service.ProjectService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -34,6 +35,9 @@ public class ProjectController {
 
     @Autowired
     private ProjectService projectService;
+
+    @Value("${request.service.url:http://request-service:8083}")
+    private String requestServiceBaseUrl;
 
     // New API endpoint that returns project data as JSON so the frontend can render the template
     @GetMapping("/api/project/{id}")
@@ -137,7 +141,7 @@ public class ProjectController {
                 // Mark all matching requests as completed (clubName matches and description matches projectName)
                 try {
                     org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-                    String requestServiceUrl = "http://localhost:8083/api/requests/mark-completed";
+                    String requestServiceUrl = requestServiceBaseUrl + "/api/requests/mark-completed";
 
                     Map<String, String> requestData = new HashMap<>();
                     requestData.put("clubName", savedProject.getClubName());
@@ -165,7 +169,7 @@ public class ProjectController {
                     try {
                         Long requestId = Long.parseLong(fromRequest);
                         org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-                        String requestServiceUrl = "http://localhost:8083/update-request-status";
+                        String requestServiceUrl = requestServiceBaseUrl + "/update-request-status";
 
                         Map<String, Object> requestData = new HashMap<>();
                         requestData.put("requestId", requestId);
@@ -388,4 +392,3 @@ public class ProjectController {
         }
     }
 }
-

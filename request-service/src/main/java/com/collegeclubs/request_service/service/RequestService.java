@@ -5,6 +5,7 @@ import com.collegeclubs.request_service.repository.RequestRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,12 @@ public class RequestService {
     private JdbcTemplate jdbcTemplate;
 
     private RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${project.service.url:http://project-service:8084}")
+    private String projectServiceBaseUrl;
+
+    @Value("${event.service.url:http://event-service:8085}")
+    private String eventServiceBaseUrl;
 
     /**
      * Sync existing requests with projects and events on startup
@@ -77,7 +84,7 @@ public class RequestService {
 
                 // Check for matching project
                 try {
-                    String projectUrl = "http://localhost:8084/api/projects/search?clubName="
+                    String projectUrl = projectServiceBaseUrl + "/api/projects/search?clubName="
                         + java.net.URLEncoder.encode(request.getClubName(), "UTF-8")
                         + "&projectName=" + java.net.URLEncoder.encode(request.getDescription(), "UTF-8");
 
@@ -97,7 +104,7 @@ public class RequestService {
                 // Check for matching event if no project found
                 if (!shouldMarkCompleted) {
                     try {
-                        String eventUrl = "http://localhost:8085/api/events/search?clubName="
+                        String eventUrl = eventServiceBaseUrl + "/api/events/search?clubName="
                             + java.net.URLEncoder.encode(request.getClubName(), "UTF-8")
                             + "&eventName=" + java.net.URLEncoder.encode(request.getDescription(), "UTF-8");
 

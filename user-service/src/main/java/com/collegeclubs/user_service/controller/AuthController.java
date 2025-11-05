@@ -1,6 +1,7 @@
 package com.collegeclubs.user_service.controller;
 
 import com.collegeclubs.user_service.service.UserService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,9 @@ import java.util.Map;
 @RequestMapping("/user-service/api/auth")
 public class AuthController {
     private final UserService userService;
+
+    @Value("${club.service.url:http://club-service:8082}")
+    private String clubServiceBaseUrl;
 
     public AuthController(UserService userService) {
         this.userService = userService;
@@ -25,7 +29,7 @@ public class AuthController {
             String userType = (String) requestBody.get("userType");
             if ("club".equalsIgnoreCase(userType)) {
                 // Call club-service to register the club in clubdb
-                String clubServiceUrl = "http://localhost:8082/club-service/api/club/register";
+                String clubServiceUrl = clubServiceBaseUrl + "/club-service/api/club/register";
                 org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
                 restTemplate.postForObject(clubServiceUrl, requestBody, String.class);
             }

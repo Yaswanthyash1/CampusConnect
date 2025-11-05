@@ -3,6 +3,7 @@ package com.collegeclubs.event_service.controller;
 import com.collegeclubs.event_service.model.Event;
 import com.collegeclubs.event_service.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -22,6 +23,8 @@ public class EventController {
     @Autowired
     private EventService eventService;
 
+    @Value("${request.service.url:http://request-service:8083}")
+    private String requestServiceBaseUrl;
 
     @GetMapping("/event-details/{id}")
     public String showEventDetails(@PathVariable("id") Long id, Model model) {
@@ -132,7 +135,7 @@ public class EventController {
             if (saved != null) {
                 try {
                     org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-                    String requestServiceUrl = "http://localhost:8083/api/requests/mark-completed";
+                    String requestServiceUrl = requestServiceBaseUrl + "/api/requests/mark-completed";
 
                     java.util.Map<String, String> requestData = new java.util.HashMap<>();
                     requestData.put("clubName", clubName);

@@ -4,6 +4,7 @@ import com.collegeclubs.club_service.model.Club;
 import com.collegeclubs.club_service.service.ClubService;
 import com.collegeclubs.club_service.repository.ClubRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,12 @@ public class ClubController {
     private ClubRepository clubRepository; // (can be removed if not used elsewhere)
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Value("${request.service.url:http://request-service:8083}")
+    private String requestServiceBaseUrl;
+
+    @Value("${user.service.url:http://user-service:8081}")
+    private String userServiceBaseUrl;
 
     // --- Club Registration ---
     @PostMapping("/register")
@@ -109,7 +116,7 @@ public class ClubController {
         List<Map<String, Object>> pendingRequests = new ArrayList<>();
         try {
             org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-            String requestServiceUrl = "http://localhost:8083/club-requests";
+            String requestServiceUrl = requestServiceBaseUrl + "/club-requests";
 
             org.springframework.http.ResponseEntity<List<Map<String, Object>>> response =
                     restTemplate.exchange(
@@ -147,7 +154,7 @@ public class ClubController {
         try {
             org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
             if (requestId != null) {
-                String requestServiceUrl = "http://localhost:8083/update-request-status";
+                String requestServiceUrl = requestServiceBaseUrl + "/update-request-status";
                 Map<String, Object> requestBody = new HashMap<>();
                 requestBody.put("requestId", requestId);
                 requestBody.put("action", action);
@@ -168,7 +175,7 @@ public class ClubController {
         List<Map<String, Object>> rejectedRequests = new ArrayList<>();
         try {
             org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-            String requestServiceUrl = "http://localhost:8083/club-requests";
+            String requestServiceUrl = requestServiceBaseUrl + "/club-requests";
             org.springframework.http.ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
                     requestServiceUrl,
                     org.springframework.http.HttpMethod.GET, null,
@@ -351,7 +358,7 @@ public class ClubController {
          try {
              // Call user-service to get members for this club
              org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-             String userServiceUrl = "http://localhost:8081/user-service/api/user/club-members?clubName=" + clubName;
+             String userServiceUrl = userServiceBaseUrl + "/user-service/api/user/club-members?clubName=" + clubName;
 
              System.out.println("DEBUG: Calling user-service URL: " + userServiceUrl);
 

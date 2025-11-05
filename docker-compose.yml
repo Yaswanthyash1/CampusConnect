@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+  user-service:
+    build: ./user-service
+    image: campusconnect/user-service:latest
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    volumes:
+      - user_db_data:/var/lib/mysql
+
+  club-service:
+    build: ./club-service
+    image: campusconnect/club-service:latest
+    container_name: club-service
+    ports:
+      - "8082:8082"
+    environment:
+      - CLUB_BASE_URL=http://club-service:8082/club-service
+    volumes:
+      - club_db_data:/var/lib/mysql
+
+  request-service:
+    build: ./request-service
+    image: campusconnect/request-service:latest
+    container_name: request-service
+    ports:
+      - "8083:8083"
+    volumes:
+      - request_db_data:/var/lib/mysql
+
+  project-service:
+    build: ./project-service
+    image: campusconnect/project-service:latest
+    container_name: project-service
+    ports:
+      - "8084:8084"
+    volumes:
+      - project_db_data:/var/lib/mysql
+
+  event-service:
+    build: ./event-service
+    image: campusconnect/event-service:latest
+    container_name: event-service
+    ports:
+      - "8085:8085"
+    volumes:
+      - event_db_data:/var/lib/mysql
+
+  frontend:
+    build: ./frontend
+    image: campusconnect/frontend:latest
+    container_name: frontend
+    ports:
+      - "8080:8080"
+    environment:
+      - USER_SERVICE_URL=http://user-service:8081
+      - CLUB_SERVICE_URL=http://club-service:8082
+      - REQUEST_SERVICE_URL=http://request-service:8083
+      - PROJECT_SERVICE_URL=http://project-service:8084
+      - EVENT_SERVICE_URL=http://event-service:8085
+    volumes:
+      - frontend_db_data:/var/lib/mysql
+
+volumes:
+  user_db_data:
+  club_db_data:
+  request_db_data:
+  project_db_data:
+  event_db_data:
+  frontend_db_data:

@@ -1,0 +1,15 @@
+.git
+.gradle
+build
+out
+.tmp
+.idea
+*.iml
+.git
+.gradle
+build
+out
+.tmp
+.idea
+*.iml
+

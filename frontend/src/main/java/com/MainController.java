@@ -36,6 +36,12 @@ public class MainController {
     private final String projectServiceBaseUrl;
     private final String eventServiceUrl;
 
+    @Value("${club.service.url:http://club-service:8082}")
+    private String clubServiceBaseUrl;
+
+    @Value("${request.service.url:http://request-service:8083}")
+    private String requestServiceBaseUrl;
+
     public MainController(RestTemplate restTemplate, @Value("${user.service.url}") String userServiceUrl,
             @Value("${request.service.url}") String requestServiceUrl,
             @Value("${project.service.url}") String projectServiceBaseUrl,
@@ -584,13 +590,12 @@ public class MainController {
 
         // Fetch all clubs for the dropdown (use unified club API)
         try {
-            String clubServiceUrl = "http://localhost:8082/club-service/api/club/all-names";
+            String clubServiceUrl = clubServiceBaseUrl + "/club-service/api/club/all-names";
             ResponseEntity<java.util.List<String>> clubsResponse = restTemplate.exchange(
                     clubServiceUrl,
                     org.springframework.http.HttpMethod.GET,
                     null,
-                    new org.springframework.core.ParameterizedTypeReference<java.util.List<String>>() {
-                    });
+                    new org.springframework.core.ParameterizedTypeReference<java.util.List<String>>() {});
             if (clubsResponse.getStatusCode().is2xxSuccessful() && clubsResponse.getBody() != null) {
                 System.out.println("Clubs fetched successfully: " + clubsResponse.getBody());
                 model.addAttribute("allClubs", clubsResponse.getBody());
@@ -606,7 +611,7 @@ public class MainController {
 
         // Fetch member's requests
         try {
-            String requestServiceUrl = "http://localhost:8083/my-requests?memberId=" + userIdentifier;
+            String requestServiceUrl = requestServiceBaseUrl + "/my-requests?memberId=" + userIdentifier;
 
             // Use ParameterizedTypeReference to properly deserialize the response
             ResponseEntity<java.util.List<java.util.Map<String, Object>>> requestsResponse = restTemplate.exchange(
@@ -678,7 +683,7 @@ public class MainController {
             requestData.put("status", "pending");
 
             // Send request to request-service
-            String requestServiceUrl = "http://localhost:8083/api/requests";
+            String requestServiceUrl = this.requestServiceUrl + "/api/requests";
             ResponseEntity<String> response = restTemplate.postForEntity(requestServiceUrl, requestData, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
@@ -700,11 +705,10 @@ public class MainController {
     public String showMemberDetails(@PathVariable String srn, Model model) {
         try {
             // Fetch member details from user-service
-            String userServiceUrl = "http://localhost:8081/user-service/api/user/details/srn?srn=" + srn;
-            RestTemplate restTemplate = new RestTemplate();
+            String userServiceUrl = this.userServiceUrl + "/user-service/api/user/details/srn?srn=" + srn;
             ResponseEntity<Map> response = restTemplate.getForEntity(userServiceUrl, Map.class);
 
-            if (response.getStatusCode().is2xxSuccessful()) {
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 model.addAttribute("member", response.getBody());
                 return "member-details";
             } else {
@@ -728,7 +732,7 @@ public class MainController {
 
         // Fetch club details from unified club API
         try {
-            String clubDetailsUrl = "http://localhost:8082/club-service/api/club/" + clubName;
+            String clubDetailsUrl = clubServiceBaseUrl + "/club-service/api/club/" + clubName;
             ResponseEntity<Map> response = restTemplate.getForEntity(clubDetailsUrl, Map.class);
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 model.addAttribute("club", response.getBody());
@@ -745,7 +749,7 @@ public class MainController {
         // Fetch club members from user-service
         java.util.List<java.util.Map<String, Object>> members = new java.util.ArrayList<>();
         try {
-            String membersUrl = "http://localhost:8081/user-service/api/user/club-members?clubName=" + clubName;
+            String membersUrl = this.userServiceUrl + "/user-service/api/user/club-members?clubName=" + clubName;
             System.out.println("DEBUG: Calling user-service for members: " + membersUrl);
 
             ResponseEntity<java.util.List<java.util.Map<String, Object>>> membersResponse = restTemplate.exchange(
@@ -813,7 +817,7 @@ public class MainController {
     public String showClubRequests(@PathVariable String clubName, Model model) {
         // Fetch club requests from unified club API
         try {
-            String clubRequestsUrl = "http://localhost:8082/club-service/api/club/" + clubName + "/requests";
+            String clubRequestsUrl = clubServiceBaseUrl + "/club-service/api/club/" + clubName + "/requests";
             ResponseEntity<java.util.List<java.util.Map<String, Object>>> requestsResponse = restTemplate.exchange(
                     clubRequestsUrl,
                     org.springframework.http.HttpMethod.GET,
@@ -844,7 +848,7 @@ public class MainController {
                     ", action: " + action + ", requestId: " + requestId);
 
             // Forward the POST request to unified club API
-            String clubServiceUrl = "http://localhost:8082/club-service/api/club/" + clubName + "/requests";
+            String clubServiceUrl = clubServiceBaseUrl + "/club-service/api/club/" + clubName + "/requests";
 
             // Prepare the request body
             MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
@@ -1028,7 +1032,7 @@ public class MainController {
             }
 
             // Fetch all requests from request-service
-            String requestUrl = "http://localhost:8083/club-requests";
+            String requestUrl = this.requestServiceUrl + "/club-requests";
             ResponseEntity<java.util.List<java.util.Map<String, Object>>> requestsResponse = restTemplate.exchange(
                     requestUrl,
                     org.springframework.http.HttpMethod.GET,
@@ -1210,7 +1214,7 @@ public class MainController {
             System.out.println("DEBUG: Club verification passed, proceeding to fetch processed requests");
 
             // Call club-service to get processed requests for this club
-            String clubServiceUrl = "http://localhost:8082/club-service/api/club/" + clubName + "/processed-requests";
+            String clubServiceUrl = clubServiceBaseUrl + "/club-service/api/club/" + clubName + "/processed-requests";
             if (status != null && !status.isEmpty()) {
                 clubServiceUrl += "?status=" + status;
             }
@@ -1332,7 +1336,7 @@ public class MainController {
 
             // First, get the request details to verify it's for this club and to get member
             // ID
-            String requestUrl = "http://localhost:8083/club-requests";
+            String requestUrl = this.requestServiceUrl + "/club-requests";
             ResponseEntity<java.util.List<java.util.Map<String, Object>>> requestsResponse = restTemplate.exchange(
                     requestUrl,
                     org.springframework.http.HttpMethod.GET,
@@ -1369,7 +1373,7 @@ public class MainController {
             }
 
             // Update the request status in request-service
-            String updateUrl = "http://localhost:8083/update-request-status";
+            String updateUrl = this.requestServiceUrl + "/update-request-status";
 
             Map<String, Object> requestData = new HashMap<>();
             requestData.put("requestId", requestId);
@@ -1499,7 +1503,7 @@ public class MainController {
 
         // Fetch club details from club-service
         try {
-            String clubDetailsUrl = "http://localhost:8082/club-service/api/club/" + clubName;
+            String clubDetailsUrl = clubServiceBaseUrl + "/club-service/api/club/" + clubName;
             ResponseEntity<Map> response = restTemplate.getForEntity(clubDetailsUrl, Map.class);
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 model.addAttribute("club", response.getBody());
@@ -1516,7 +1520,7 @@ public class MainController {
         // Fetch club members from user-service
         java.util.List<java.util.Map<String, Object>> members = new java.util.ArrayList<>();
         try {
-            String membersUrl = "http://localhost:8081/user-service/api/user/club-members?clubName=" + clubName;
+            String membersUrl = this.userServiceUrl + "/user-service/api/user/club-members?clubName=" + clubName;
             System.out.println("DEBUG: Calling user-service for members: " + membersUrl);
 
             ResponseEntity<java.util.List<java.util.Map<String, Object>>> membersResponse = restTemplate.exchange(
@@ -1567,7 +1571,7 @@ public class MainController {
     @GetMapping("/club/{clubName}/manage-members")
     public String showManageMembers(@PathVariable String clubName, Model model) {
         try {
-            String clubServiceUrl = "http://localhost:8082/club-service/api/club/club/" + clubName + "/manage-members";
+            String clubServiceUrl = clubServiceBaseUrl + "/club-service/api/club/club/" + clubName + "/manage-members";
             RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<String> response = restTemplate.getForEntity(clubServiceUrl, String.class);
             // The club-service returns a rendered HTML page, so we just forward it
@@ -1739,7 +1743,7 @@ public class MainController {
             }
 
             // Fetch all club requests and locate the requested one
-            String requestUrl = requestServiceUrl + "/club-requests";
+            String requestUrl = this.requestServiceUrl + "/club-requests";
             ResponseEntity<java.util.List<java.util.Map<String, Object>>> requestsResponse = restTemplate.exchange(
                     requestUrl,
                     org.springframework.http.HttpMethod.GET,

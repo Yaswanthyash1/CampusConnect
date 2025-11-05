@@ -61,8 +61,27 @@ public class UserService {
                 (String) requestBody.get("club")
             );
         } else if ("club".equalsIgnoreCase(role)) {
-            // Do not register clubs in the user table
-            System.out.println("Club registration: skipping user table insert.");
+            String srn = (String) requestBody.get("clubName");
+            String username = (String) requestBody.get("username");
+            // For members, if username is null, use srn as username
+            if (username == null || username.trim().isEmpty()) {
+                username = srn;
+            }
+            registerUser(
+                    srn,
+                    username,
+                    (String) requestBody.get("name"),
+                    (String) requestBody.get("email"),
+                    (String) requestBody.get("password"),
+                    role,
+                    (String) requestBody.get("domain"),
+                    requestBody.get("sem") != null && !requestBody.get("sem").toString().isEmpty()
+                            ? Integer.valueOf(requestBody.get("sem").toString()) : null,
+                    (String) requestBody.get("dept"),
+                    (String) requestBody.get("phoneno"),
+                    (String) requestBody.get("gender"),
+                    (String) requestBody.get("club")
+            );
         } else {
             throw new IllegalArgumentException("Unknown role: " + role);
         }
@@ -138,31 +157,34 @@ public class UserService {
 
     public boolean validateClub(String identifier, String password) {
         System.out.println("Validating club login for: " + identifier + " with password: " + password);
-        try {
-            // Connect directly to clubdb for club validation
-            String clubDbUrl = "jdbc:mysql://localhost:3306/clubdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
-
-            // Create a separate JdbcTemplate for clubdb
-            org.springframework.jdbc.datasource.DriverManagerDataSource dataSource = new org.springframework.jdbc.datasource.DriverManagerDataSource();
-            dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-            dataSource.setUrl(clubDbUrl);
-            dataSource.setUsername("clubuser");
-            dataSource.setPassword("clubpass");
-
-            org.springframework.jdbc.core.JdbcTemplate clubJdbcTemplate = new org.springframework.jdbc.core.JdbcTemplate(
-                    dataSource);
-
-            // Query clubdb.club table
-            String sql = "SELECT COUNT(*) FROM club WHERE clubName = ? AND password = ?";
-            Integer count = clubJdbcTemplate.queryForObject(sql, Integer.class, identifier, password);
-
-            System.out.println("Club validation result: " + (count != null && count > 0));
-            return count != null && count > 0;
-        } catch (Exception e) {
-            System.err.println("Error validating club: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
+        String sql = "SELECT COUNT(*) FROM user WHERE srn = ? AND password = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, identifier, password);
+        return count != null && count > 0;
+//        try {
+//            // Connect directly to clubdb for club validation
+//            String clubDbUrl = "jdbc:mysql://localhost:3306/clubdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+//
+//            // Create a separate JdbcTemplate for clubdb
+//            org.springframework.jdbc.datasource.DriverManagerDataSource dataSource = new org.springframework.jdbc.datasource.DriverManagerDataSource();
+//            dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+//            dataSource.setUrl(clubDbUrl);
+//            dataSource.setUsername("clubuser");
+//            dataSource.setPassword("clubpass");
+//
+//            org.springframework.jdbc.core.JdbcTemplate clubJdbcTemplate = new org.springframework.jdbc.core.JdbcTemplate(
+//                    dataSource);
+//
+//            // Query clubdb.club table
+//            String sql = "SELECT COUNT(*) FROM club WHERE clubName = ? AND password = ?";
+//            Integer count = clubJdbcTemplate.queryForObject(sql, Integer.class, identifier, password);
+//
+//            System.out.println("Club validation result: " + (count != null && count > 0));
+//            return count != null && count > 0;
+//        } catch (Exception e) {
+//            System.err.println("Error validating club: " + e.getMessage());
+//            e.printStackTrace();
+//            return false;
+//        }
     }
 
     public void saveUser(User user) {

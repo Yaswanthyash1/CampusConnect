@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -48,6 +49,9 @@ public class RequestController {
     private JdbcTemplate jdbcTemplate;
 
     private RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${user.service.url:http://user-service:8081}")
+    private String userServiceBaseUrl;
 
     @GetMapping("/club-requests")
     @ResponseBody
@@ -132,16 +136,10 @@ public class RequestController {
                 if ("accepted".equals(status) && memberId != null && requestClubName != null &&
                     "Club Enrollment".equalsIgnoreCase(requestType)) {
                     try {
-                        // Call user service to update user's club
-                        String userServiceUrl = "http://localhost:8081/user-service/api/user/update-club";
-
+                        String userServiceUrl = userServiceBaseUrl + "/user-service/api/user/update-club";
                         Map<String, Object> updateData = new HashMap<>();
                         updateData.put("userId", memberId);
                         updateData.put("clubName", requestClubName);
-
-                        System.out.println("Club Enrollment request accepted - Calling user service to update club for user: " + memberId + " to club: " + requestClubName);
-                        System.out.println("Request data being sent: " + updateData);
-
                         ResponseEntity<String> userResponse = restTemplate.postForEntity(userServiceUrl, updateData, String.class);
 
                         if (userResponse.getStatusCode().is2xxSuccessful()) {
@@ -252,7 +250,8 @@ public class RequestController {
     }
 
     @PostMapping("/submit-request")
-    public String submitRequest(@RequestParam("type") String type,
+    public String submitRequest(
+            @RequestParam("type") String type,
             @RequestParam("description") String description,
             @RequestParam(value = "memberId", required = false) String memberId,
             @RequestParam("file") MultipartFile file,
@@ -320,9 +319,8 @@ public class RequestController {
             // get club name for the member from user service
             String clubName = "Unknown Club";
             try {
-                String userServiceUrl = "http://localhost:8081";
+                String userServiceUrl = userServiceBaseUrl;
                 String fallbackUrl = userServiceUrl + "/user-service/api/user/details/srn?srn=" + memberId;
-                System.out.println("Fetching user details from: " + fallbackUrl);
                 ResponseEntity<Map> fallbackResponse = restTemplate.getForEntity(fallbackUrl, Map.class);
 
                 if (fallbackResponse.getStatusCode().is2xxSuccessful() && fallbackResponse.getBody() != null) {
